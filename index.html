@@ -474,7 +474,7 @@ function Login({
             alto: 25
           }
         });
-        sto.set("goals", [{
+        sto.set("goals:demo@demo.com", [{
           id: "g1",
           name: "Viaje a Europa",
           amount: 4500000,
@@ -3399,14 +3399,17 @@ function Planificar({
   inv,
   rates,
   gKey,
-  riskTarget
+  riskTarget,
+  userEmail
 }) {
   var [amount, setAmount] = useState("");
   var [tipo, setTipo] = useState("familiar");
-  var [advice, setAdvice] = useState(sto.get("lastAdvice") || "");
+  var advKey = "adv:" + (userEmail || "x");
+  var [advice, setAdvice] = useState(sto.get(advKey) || "");
   var [prevAdvice, setPrevAdvice] = useState("");
   var [busy, setBusy] = useState(false);
-  var [goals, setGoals] = useState(sto.get("goals") || []);
+  var goalKey = "goals:" + (userEmail || "x");
+  var [goals, setGoals] = useState(sto.get(goalKey) || []);
   var [showGoal, setShowGoal] = useState(false);
   var [gName, setGName] = useState("");
   var [gAmount, setGAmount] = useState("");
@@ -3428,7 +3431,7 @@ function Planificar({
       };
       var r = "Distribución sugerida (" + tipo + "):\n\n🟢 Bajo riesgo: " + fmt(dist.bajo) + " (" + tgt.bajo + "%)\n🟡 Medio riesgo: " + fmt(dist.medio) + " (" + tgt.medio + "%)\n🔴 Alto riesgo: " + fmt(dist.alto) + " (" + tgt.alto + "%)\n\nActiva Gemini en ⚙️ para recomendaciones personalizadas con fondos específicos.";
       setAdvice(r);
-      sto.set("lastAdvice", r);
+      sto.set(advKey, r);
       return;
     }
     setBusy(true);
@@ -3457,7 +3460,7 @@ function Planificar({
     }).then(function (d) {
       var t = d?.candidates?.[0]?.content?.parts?.[0]?.text || "Error";
       setAdvice(t);
-      sto.set("lastAdvice", t);
+      sto.set(advKey, t);
       setBusy(false);
     }).catch(function () {
       setAdvice("Error de conexión");
@@ -3466,7 +3469,7 @@ function Planificar({
   };
   var saveGoals = function (ng) {
     setGoals(ng);
-    sto.set("goals", ng);
+    sto.set("goals:demo@demo.com", ng);
   };
   var addGoal = function () {
     if (!gName || !gAmount) return;
@@ -4524,10 +4527,12 @@ function Mercado({
   }, "Indicadores: mindicador.cl (Banco Central) · Actualización cada 5 min", /*#__PURE__*/React.createElement("br", null), "Noticias: IA Gemini · 3 actualizaciones diarias (mañana/mediodía/noche)")));
 }
 function Inmobiliario({
-  rates
+  rates,
+  userEmail
 }) {
   var uf = rates.UF || 40000;
-  var [props, setProps] = useState(sto.get("properties") || []);
+  var propKey = "prop:" + (userEmail || "x");
+  var [props, setProps] = useState(sto.get(propKey) || []);
   var [showAdd, setShowAdd] = useState(false);
   var [detail, setDetail] = useState(null);
   var toUF = function (clp) {
@@ -4547,8 +4552,32 @@ function Inmobiliario({
   };
   var saveP = function (p) {
     setProps(p);
-    sto.set("properties", p);
+    sto.set(propKey, p);
   };
+  useEffect(function () {
+    var today = new Date().toISOString().split("T")[0];
+    var updated = false;
+    var np = props.map(function (p) {
+      if (!p.lastAutoUpdate) return Object.assign({}, p, {
+        lastAutoUpdate: today
+      });
+      var last = new Date(p.lastAutoUpdate);
+      var now2 = new Date(today);
+      var monthsDiff = Math.max(0, (now2.getFullYear() - last.getFullYear()) * 12 + (now2.getMonth() - last.getMonth()));
+      if (monthsDiff > 0 && p.cuotasPagadas < p.totalCuotas) {
+        updated = true;
+        var newPagadas = Math.min(p.totalCuotas, p.cuotasPagadas + monthsDiff);
+        var newDeudaRest = p.deuda ? Math.round(p.deuda * (1 - newPagadas / p.totalCuotas)) : 0;
+        return Object.assign({}, p, {
+          cuotasPagadas: newPagadas,
+          deudaRestante: newDeudaRest,
+          lastAutoUpdate: today
+        });
+      }
+      return p;
+    });
+    if (updated) saveP(np);
+  }, []);
   var delP = function (id) {
     saveP(props.filter(function (p) {
       return p.id !== id;
@@ -4570,7 +4599,12 @@ function Inmobiliario({
     arriendo: "",
     grace: "0",
     precioCompra: "",
-    valorActual: ""
+    valorActual: "",
+    deuda: "",
+    monedaCompra: "CLP",
+    monedaPie: "CLP",
+    monedaArriendo: "CLP",
+    monedaDeuda: "CLP"
   });
   var s = function (k, v) {
     setF(function (p) {
@@ -4582,10 +4616,17 @@ function Inmobiliario({
   };
   var addProp = function () {
     if (!f.name) return;
-    var val = parseFloat(f.valueCLP) || parseFloat(f.valueUF || 0) * uf || 0;
-    var valUF = parseFloat(f.valueUF) || val / uf || 0;
-    var pie = parseFloat(f.pieCLP) || parseFloat(f.pieUF || 0) * uf || 0;
-    var pieUF = parseFloat(f.pieUF) || pie / uf || 0;
+    var precioRaw = parseFloat(f.precioCompra) || 0;
+    var precioCompra = f.monedaCompra === "UF" ? Math.round(precioRaw * uf) : precioRaw;
+    var valorRaw = parseFloat(f.valorActual) || 0;
+    var valorActual = (f.monedaValor || "CLP") === "UF" ? Math.round(valorRaw * uf) : valorRaw;
+    var val = valorActual || precioCompra;
+    var valUF = Math.round(val / uf * 100) / 100;
+    var pieRaw = parseFloat(f.pieCLP) || 0;
+    var pie = f.monedaPie === "UF" ? Math.round(pieRaw * uf) : pieRaw;
+    var pieUF = Math.round(pie / uf * 100) / 100;
+    var arriendoRaw = parseFloat(f.arriendo) || 0;
+    var arriendo = f.monedaArriendo === "UF" ? Math.round(arriendoRaw * uf) : arriendoRaw;
     var cuotaUF = parseFloat(f.cuotaUF) || 0;
     var cuotaCLP = Math.round(cuotaUF * uf);
     var totalC = parseInt(f.totalCuotas) || 240;
@@ -4595,6 +4636,7 @@ function Inmobiliario({
     var grace = parseInt(f.grace) || 0;
     var precioCompra = parseFloat(f.precioCompra) || val;
     var valorActual = parseFloat(f.valorActual) || val;
+    var deuda = parseFloat(f.deuda) || val - pie;
     var np = {
       id: Date.now().toString(),
       name: f.name,
@@ -4611,6 +4653,10 @@ function Inmobiliario({
       grace: grace,
       precioCompra: precioCompra,
       valorActual: valorActual,
+      deuda: deuda,
+      deudaOrig: deuda,
+      deudaRestante: Math.round(deuda * (1 - pagadas / totalC)),
+      lastAutoUpdate: new Date().toISOString().split("T")[0],
       payments: [],
       created: new Date().toISOString()
     };
@@ -4659,9 +4705,9 @@ function Inmobiliario({
     var netInvested = totalPaid - totalRent;
     var remaining = p.totalCuotas - p.cuotasPagadas;
     var futurePayments = remaining * p.cuotaCLP;
-    var futureRent = remaining * (p.arriendo || 0);
+    var futureRent = Math.round(remaining * (p.arriendo || 0) * 11 / 12);
     var totalCostEnd = totalPaid + futurePayments;
-    var totalRentEnd = totalRent + futureRent;
+    var totalRentEnd = totalRent + futureRent; /* 11/12 meses por vacancia */
     var profitAtEnd = p.valorActual - totalCostEnd + totalRentEnd;
     var returnPct = totalCostEnd > 0 ? (p.valorActual + totalRentEnd - totalCostEnd) / totalCostEnd * 100 : 0;
     return {
@@ -4839,7 +4885,21 @@ function Inmobiliario({
         fontSize: 10,
         color: C.t3
       }
-    }, "Faltan ", c.remaining)), /*#__PURE__*/React.createElement("div", {
+    }, "Faltan ", c.remaining), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 4,
+        background: C.inp,
+        borderRadius: 2,
+        marginTop: 4
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 4,
+        borderRadius: 2,
+        background: C.acc,
+        width: dp.cuotasPagadas / dp.totalCuotas * 100 + "%"
+      }
+    }))), /*#__PURE__*/React.createElement("div", {
       style: S.card
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -4858,7 +4918,51 @@ function Inmobiliario({
         fontSize: 10,
         color: dp.arriendo >= dp.cuotaCLP ? C.acc : C.dan
       }
-    }, dp.arriendo >= dp.cuotaCLP ? "Cubre cuota" : "Falta " + fmt(dp.cuotaCLP - dp.arriendo)))), /*#__PURE__*/React.createElement("div", {
+    }, dp.arriendo >= dp.cuotaCLP ? "Cubre" : "Falta " + fmt(dp.cuotaCLP - dp.arriendo))), /*#__PURE__*/React.createElement("div", {
+      style: S.card
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: C.t2,
+        textTransform: "uppercase"
+      }
+    }, "Deuda original"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 16,
+        fontWeight: 700
+      }
+    }, fmt(dp.deuda || dp.debt || 0)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3
+      }
+    }, fUF(toUF(dp.deuda || dp.debt || 0)))), /*#__PURE__*/React.createElement("div", {
+      style: S.card
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: C.t2,
+        textTransform: "uppercase"
+      }
+    }, "Deuda restante"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 16,
+        fontWeight: 700,
+        color: C.dan
+      }
+    }, fmt(dp.deudaRestante || (dp.deuda ? Math.round(dp.deuda * (1 - dp.cuotasPagadas / dp.totalCuotas)) : 0))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3
+      }
+    }, fUF(toUF(dp.deudaRestante || (dp.deuda ? Math.round(dp.deuda * (1 - dp.cuotasPagadas / dp.totalCuotas)) : 0)))))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3,
+        textAlign: "center",
+        marginBottom: 8
+      }
+    }, "⟳ Cuotas se actualizan automáticamente cada mes · Rentabilidad usa 11 meses/año por vacancia"), /*#__PURE__*/React.createElement("div", {
       style: S.card
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -5201,67 +5305,241 @@ function Inmobiliario({
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      gap: 8,
       marginBottom: 10
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Precio compra CLP"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "Precio compra"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      background: C.inp,
+      borderRadius: 6,
+      overflow: "hidden",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaCompra", "CLP");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaCompra === "CLP" ? C.acc : "transparent",
+      color: f.monedaCompra === "CLP" ? "#fff" : C.t3
+    }
+  }, "CLP"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaCompra", "UF");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaCompra === "UF" ? C.acc : "transparent",
+      color: f.monedaCompra === "UF" ? "#fff" : C.t3
+    }
+  }, "UF"))), /*#__PURE__*/React.createElement(NumInput, {
     value: f.precioCompra,
     onChange: function (v) {
       s("precioCompra", v);
     },
-    placeholder: "85.000.000"
-  })), /*#__PURE__*/React.createElement("div", {
+    placeholder: f.monedaCompra === "UF" ? "2.100" : "85.000.000",
+    decimals: f.monedaCompra === "UF" ? 2 : 0
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1
+      fontSize: 11,
+      color: C.t3,
+      marginTop: 2
     }
-  }, /*#__PURE__*/React.createElement("label", {
-    style: S.label
-  }, "Valor actual CLP"), /*#__PURE__*/React.createElement(NumInput, {
-    value: f.valorActual,
-    onChange: function (v) {
-      s("valorActual", v);
-      if (!f.valueCLP) s("valueCLP", v);
-    },
-    placeholder: "90.000.000"
-  }))), /*#__PURE__*/React.createElement("div", {
+  }, "= ", f.precioCompra ? f.monedaCompra === "UF" ? fmt(Math.round((parseFloat(f.precioCompra) || 0) * uf)) + " CLP" : fUF(toUF(parseFloat(f.precioCompra) || 0)) : "")), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      gap: 8,
       marginBottom: 10
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Pie CLP"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "Valor actual"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      background: C.inp,
+      borderRadius: 6,
+      overflow: "hidden",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaValor", "CLP");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: (f.monedaValor || "CLP") === "CLP" ? C.acc : "transparent",
+      color: (f.monedaValor || "CLP") === "CLP" ? "#fff" : C.t3
+    }
+  }, "CLP"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaValor", "UF");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaValor === "UF" ? C.acc : "transparent",
+      color: f.monedaValor === "UF" ? "#fff" : C.t3
+    }
+  }, "UF"))), /*#__PURE__*/React.createElement(NumInput, {
+    value: f.valorActual,
+    onChange: function (v) {
+      s("valorActual", v);
+    },
+    placeholder: (f.monedaValor || "CLP") === "UF" ? "2.200" : "90.000.000",
+    decimals: (f.monedaValor || "CLP") === "UF" ? 2 : 0
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginTop: 2
+    }
+  }, "= ", f.valorActual ? (f.monedaValor || "CLP") === "UF" ? fmt(Math.round((parseFloat(f.valorActual) || 0) * uf)) + " CLP" : fUF(toUF(parseFloat(f.valorActual) || 0)) : "")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Pie pagado"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      background: C.inp,
+      borderRadius: 6,
+      overflow: "hidden",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaPie", "CLP");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaPie === "CLP" ? C.acc : "transparent",
+      color: f.monedaPie === "CLP" ? "#fff" : C.t3
+    }
+  }, "CLP"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaPie", "UF");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaPie === "UF" ? C.acc : "transparent",
+      color: f.monedaPie === "UF" ? "#fff" : C.t3
+    }
+  }, "UF"))), /*#__PURE__*/React.createElement(NumInput, {
     value: f.pieCLP,
     onChange: function (v) {
       s("pieCLP", v);
     },
-    placeholder: "17.000.000"
-  })), /*#__PURE__*/React.createElement("div", {
+    placeholder: f.monedaPie === "UF" ? "420" : "17.000.000",
+    decimals: f.monedaPie === "UF" ? 2 : 0
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1
+      fontSize: 11,
+      color: C.t3,
+      marginTop: 2
+    }
+  }, "= ", f.pieCLP ? f.monedaPie === "UF" ? fmt(Math.round((parseFloat(f.pieCLP) || 0) * uf)) + " CLP" : fUF(toUF(parseFloat(f.pieCLP) || 0)) : "")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Pie UF"), /*#__PURE__*/React.createElement(NumInput, {
-    value: f.pieUF,
-    onChange: function (v) {
-      s("pieUF", v);
+  }, "Deuda hipotecaria"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      background: C.inp,
+      borderRadius: 6,
+      overflow: "hidden",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaDeuda", "CLP");
     },
-    placeholder: "420",
-    decimals: 2
-  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaDeuda === "CLP" ? C.acc : "transparent",
+      color: f.monedaDeuda === "CLP" ? "#fff" : C.t3
+    }
+  }, "CLP"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaDeuda", "UF");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaDeuda === "UF" ? C.acc : "transparent",
+      color: f.monedaDeuda === "UF" ? "#fff" : C.t3
+    }
+  }, "UF"))), /*#__PURE__*/React.createElement(NumInput, {
+    value: f.deuda,
+    onChange: function (v) {
+      s("deuda", v);
+    },
+    placeholder: f.monedaDeuda === "UF" ? "1.680" : "68.000.000",
+    decimals: f.monedaDeuda === "UF" ? 2 : 0
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginTop: 2
+    }
+  }, "= ", f.deuda ? f.monedaDeuda === "UF" ? fmt(Math.round((parseFloat(f.deuda) || 0) * uf)) + " CLP" : fUF(toUF(parseFloat(f.deuda) || 0)) : "")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -5325,35 +5603,80 @@ function Inmobiliario({
     placeholder: "36"
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      gap: 8,
       marginBottom: 10
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Arriendo CLP/mes"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "Arriendo mensual"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      background: C.inp,
+      borderRadius: 6,
+      overflow: "hidden",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaArriendo", "CLP");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaArriendo === "CLP" ? C.acc : "transparent",
+      color: f.monedaArriendo === "CLP" ? "#fff" : C.t3
+    }
+  }, "CLP"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      s("monedaArriendo", "UF");
+    },
+    style: {
+      padding: "2px 8px",
+      border: "none",
+      fontSize: 10,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: f.monedaArriendo === "UF" ? C.acc : "transparent",
+      color: f.monedaArriendo === "UF" ? "#fff" : C.t3
+    }
+  }, "UF"))), /*#__PURE__*/React.createElement(NumInput, {
     value: f.arriendo,
     onChange: function (v) {
       s("arriendo", v);
     },
-    placeholder: "450.000"
-  })), /*#__PURE__*/React.createElement("div", {
+    placeholder: f.monedaArriendo === "UF" ? "11" : "450.000",
+    decimals: f.monedaArriendo === "UF" ? 2 : 0
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1
+      fontSize: 11,
+      color: C.t3,
+      marginTop: 2
+    }
+  }, "= ", f.arriendo ? f.monedaArriendo === "UF" ? fmt(Math.round((parseFloat(f.arriendo) || 0) * uf)) + " CLP" : fUF(toUF(parseFloat(f.arriendo) || 0)) : "", "  ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.warn
+    }
+  }, "(se calcula 11 meses/año por vacancia)"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Meses gracia"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "Meses de gracia"), /*#__PURE__*/React.createElement(NumInput, {
     value: f.grace,
     onChange: function (v) {
       s("grace", v);
     },
     placeholder: "0"
-  }))), f.cuotaUF && /*#__PURE__*/React.createElement("div", {
+  })), f.cuotaUF && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.accL,
       borderRadius: 12,
@@ -5468,9 +5791,14 @@ function App() {
       if (cached) setRates(cached);
     });
   }, []);
-  const login = u => {
+  const login = function (u, isDemo) {
     setUser(u);
-    sto.set("sess", {
+    if (isDemo) {
+      setTimeout(function () {
+        setShowTutorial(true);
+      }, 500);
+    }
+    if (!isDemo) sto.set("sess", {
       email: u.email
     });
     setInv(sto.get(`inv:${u.email}`) || []);
@@ -5570,7 +5898,7 @@ function App() {
     onSave: function (u) {
       setUser(u);
       sto.set("u:" + u.email, u);
-      sto.set("sess", {
+      if (!isDemo) sto.set("sess", {
         email: u.email
       });
       setShowEditProfile(false);
@@ -6382,14 +6710,16 @@ function App() {
       textAlign: "right"
     }
   }, fmt(val)))))))), tab === "realestate" && /*#__PURE__*/React.createElement(Inmobiliario, {
-    rates: rates
+    rates: rates,
+    userEmail: user.email
   }), tab === "market" && /*#__PURE__*/React.createElement(Mercado, {
     gKey: gKey
   }), tab === "plan" && /*#__PURE__*/React.createElement(Planificar, {
     inv: inv,
     rates: rates,
     gKey: gKey,
-    riskTarget: riskTarget
+    riskTarget: riskTarget,
+    userEmail: user.email
   }), tab === "profile" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "calc(24px + var(--st)) 20px 8px"
@@ -6555,7 +6885,7 @@ function App() {
     onSave: function (u) {
       setUser(u);
       sto.set("u:" + u.email, u);
-      sto.set("sess", {
+      if (!isDemo) sto.set("sess", {
         email: u.email
       });
       setShowEditProfile(false);

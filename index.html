@@ -236,8 +236,10 @@ function NumInput({
   style: st,
   decimals
 }) {
+  var [editing, setEditing] = useState(false);
+  var [raw, setRaw] = useState("");
   var num = parseFloat(value) || 0;
-  var display = value ? decimals ? num.toLocaleString("es-CL", {
+  var display = editing ? raw : value ? decimals ? num.toLocaleString("es-CL", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   }) : Math.round(num).toLocaleString("es-CL") : "";
@@ -247,9 +249,20 @@ function NumInput({
     inputMode: "decimal",
     placeholder: placeholder || "0",
     value: display,
+    onFocus: function () {
+      setEditing(true);
+      setRaw(value ? String(value) : "");
+    },
+    onBlur: function () {
+      setEditing(false);
+      var clean = raw.replace(/[^\d,\.]/g, "").replace(",", ".");
+      onChange(clean);
+    },
     onChange: function (e) {
-      var raw = e.target.value.replace(/[^\d,]/g, "").replace(",", ".");
-      onChange(raw);
+      var v = e.target.value;
+      setRaw(v);
+      var clean = v.replace(/[^\d,\.]/g, "").replace(",", ".");
+      onChange(clean);
     }
   });
 }

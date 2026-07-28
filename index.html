@@ -3416,6 +3416,10 @@ function Planificar({
   var [gMonths, setGMonths] = useState("12");
   var [gTipo, setGTipo] = useState("individual");
   var [goalChat, setGoalChat] = useState(null);
+  useEffect(function () {
+    setGoals(sto.get(goalKey) || []);
+    setAdvice(sto.get(advKey) || "");
+  }, [userEmail]);
   var [chatInput, setChatInput] = useState("");
   var [chatBusy, setChatBusy] = useState(false);
   var getAdvice = function () {
@@ -4554,6 +4558,10 @@ function Inmobiliario({
     setProps(p);
     sto.set(propKey, p);
   };
+  useEffect(function () {
+    var loaded = sto.get(propKey) || [];
+    setProps(loaded);
+  }, [userEmail]);
   useEffect(function () {
     var today = new Date().toISOString().split("T")[0];
     var updated = false;
@@ -5742,6 +5750,12 @@ function App() {
     EUR: 1050,
     UF: 38000
   });
+  useEffect(function () {
+    if (user && sto.get("_show_tutorial")) {
+      sto.del("_show_tutorial");
+      setShowTutorial(true);
+    }
+  }, [user]);
   useEffect(() => {
     if (!sto.get("_preloaded_v1")) {
       try {
@@ -5793,11 +5807,7 @@ function App() {
   }, []);
   const login = function (u, isDemo) {
     setUser(u);
-    if (isDemo) {
-      setTimeout(function () {
-        setShowTutorial(true);
-      }, 500);
-    }
+    if (isDemo) sto.set("_show_tutorial", "1");
     if (!isDemo) sto.set("sess", {
       email: u.email
     });
@@ -6864,15 +6874,33 @@ function App() {
       marginTop: 8
     }
   }, "⚙️ Ajustes"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      window.location.reload(true);
+    },
+    style: {
+      ...S.btn,
+      background: "none",
+      border: "2px solid " + C.acc,
+      color: C.acc,
+      marginTop: 8
+    }
+  }, "🔄 Actualizar App"), /*#__PURE__*/React.createElement("button", {
     onClick: logout,
     style: {
       ...S.btn,
       background: "none",
-      border: `2px solid ${C.dan}`,
+      border: "2px solid " + C.dan,
       color: C.dan,
       marginTop: 8
     }
-  }, "Cerrar Sesión"))), showTutorial && /*#__PURE__*/React.createElement(Tutorial, {
+  }, "Cerrar Sesión"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      textAlign: "center",
+      marginTop: 8
+    }
+  }, "Si tienes la app instalada y no ves los cambios, toca \"Actualizar App\""))), showTutorial && /*#__PURE__*/React.createElement(Tutorial, {
     onClose: function () {
       setShowTutorial(false);
     },

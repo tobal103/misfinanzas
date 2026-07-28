@@ -478,19 +478,84 @@ function Login({
           id: "g1",
           name: "Viaje a Europa",
           amount: 4500000,
-          months: 10
+          months: 10,
+          tipo: "individual",
+          advice: "",
+          chat: []
         }, {
           id: "g2",
           name: "Pie departamento",
           amount: 25000000,
-          months: 24
+          months: 24,
+          tipo: "familiar",
+          advice: "",
+          chat: []
         }, {
           id: "g3",
           name: "iPhone nuevo",
           amount: 1200000,
-          months: 4
+          months: 4,
+          tipo: "individual",
+          advice: "",
+          chat: []
         }]);
-        onLogin(du);
+        sto.set("prop:demo@demo.com", [{
+          id: "pd1",
+          name: "Depto Providencia",
+          value: 95000000,
+          valueUF: 2326,
+          pie: 19000000,
+          pieUF: 465,
+          cuotaUF: 8.2,
+          cuotaCLP: 335000,
+          totalCuotas: 240,
+          cuotasPagadas: 48,
+          rate: 4.2,
+          arriendo: 480000,
+          grace: 0,
+          precioCompra: 82000000,
+          valorActual: 95000000,
+          deuda: 63000000,
+          deudaOrig: 63000000,
+          deudaRestante: 50400000,
+          lastAutoUpdate: new Date().toISOString().split("T")[0],
+          payments: [{
+            date: new Date().toISOString(),
+            type: "dividend",
+            amount: 335000,
+            note: "Cuota pagada"
+          }, {
+            date: new Date().toISOString(),
+            type: "arriendo",
+            amount: 480000,
+            note: "Arriendo cobrado"
+          }],
+          created: new Date().toISOString()
+        }, {
+          id: "pd2",
+          name: "Depto Nunoa Inversion",
+          value: 74500000,
+          valueUF: 1824,
+          pie: 14400000,
+          pieUF: 353,
+          cuotaUF: 6.8,
+          cuotaCLP: 278000,
+          totalCuotas: 300,
+          cuotasPagadas: 12,
+          rate: 4.8,
+          arriendo: 350000,
+          grace: 3,
+          precioCompra: 72000000,
+          valorActual: 74500000,
+          deuda: 57600000,
+          deudaOrig: 57600000,
+          deudaRestante: 55300000,
+          lastAutoUpdate: new Date().toISOString().split("T")[0],
+          payments: [],
+          created: new Date().toISOString()
+        }]);
+        sto.set("adv:demo@demo.com", "Distribucion sugerida para 5.000.000 familiar:\n\nBajo: $1.250.000 (25%) - Deposito a plazo o renta fija\nMedio: $2.250.000 (45%) - Fondo balanceado\nAlto: $1.500.000 (30%) - MSCI World o S&P 500\n\nEsto mantiene tu perfil de riesgo objetivo.");
+        onLogin(du, true);
         return;
       }
       const u = sto.get(`u:${email}`);

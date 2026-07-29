@@ -4616,6 +4616,7 @@ function Inmobiliario({
   var propKey = "prop:" + (userEmail || "x");
   var [props, setProps] = useState(sto.get(propKey) || []);
   var [showAdd, setShowAdd] = useState(false);
+  var [editProp, setEditProp] = useState(null);
   var [detail, setDetail] = useState(null);
   var toUF = function (clp) {
     return Math.round(clp / uf * 100) / 100;
@@ -5215,6 +5216,20 @@ function Inmobiliario({
       }
     }, "+"))), /*#__PURE__*/React.createElement("button", {
       onClick: function () {
+        setEditProp({
+          ...dp
+        });
+      },
+      style: {
+        ...S.btn,
+        background: "none",
+        border: "2px solid " + C.acc,
+        color: C.acc,
+        fontSize: 13,
+        marginBottom: 8
+      }
+    }, "✏️ Editar propiedad"), /*#__PURE__*/React.createElement("button", {
+      onClick: function () {
         delP(dp.id);
       },
       style: {
@@ -5346,7 +5361,244 @@ function Inmobiliario({
         color: c2.apreciacion >= 0 ? C.acc : C.dan
       }
     }, fP(c2.apreciacionPct)))));
-  })), showAdd && /*#__PURE__*/React.createElement("div", {
+  })), editProp && /*#__PURE__*/React.createElement("div", {
+    style: S.modal,
+    onClick: function (e) {
+      if (e.target === e.currentTarget) setEditProp(null);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.sheet
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700
+    }
+  }, "✏️ Editar Propiedad"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setEditProp(null);
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement(Ic, {
+    name: "x"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Nombre"), /*#__PURE__*/React.createElement("input", {
+    style: S.input,
+    value: editProp.name || "",
+    onChange: function (e) {
+      setEditProp({
+        ...editProp,
+        name: e.target.value
+      });
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Precio compra"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.precioCompra || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        precioCompra: parseFloat(v) || 0
+      });
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Valor actual"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.valorActual || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        valorActual: parseFloat(v) || 0
+      });
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Pie"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.pie || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        pie: parseFloat(v) || 0,
+        pieUF: Math.round((parseFloat(v) || 0) / uf * 100) / 100
+      });
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Deuda"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.deuda || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        deuda: parseFloat(v) || 0
+      });
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Cuota UF"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.cuotaUF || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        cuotaUF: parseFloat(v) || 0,
+        cuotaCLP: Math.round((parseFloat(v) || 0) * uf)
+      });
+    },
+    decimals: 2
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Tasa %"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.rate || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        rate: parseFloat(v) || 0
+      });
+    },
+    decimals: 2
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Total cuotas"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.totalCuotas || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        totalCuotas: parseInt(v) || 0
+      });
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Cuotas pagadas"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.cuotasPagadas || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        cuotasPagadas: parseInt(v) || 0
+      });
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Arriendo/mes"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.arriendo || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        arriendo: parseFloat(v) || 0
+      });
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Meses gracia"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.grace || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        grace: parseInt(v) || 0
+      });
+    }
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      var np = props.map(function (p) {
+        return p.id === editProp.id ? {
+          ...editProp,
+          deudaRestante: Math.round((editProp.deuda || 0) * (1 - editProp.cuotasPagadas / editProp.totalCuotas)),
+          value: editProp.valorActual,
+          valueUF: Math.round(editProp.valorActual / uf * 100) / 100
+        } : p;
+      });
+      saveP(np);
+      setEditProp(null);
+    },
+    style: {
+      ...S.btn,
+      background: C.acc,
+      color: "#fff"
+    }
+  }, "💾 Guardar cambios"))), showAdd && /*#__PURE__*/React.createElement("div", {
     style: S.modal,
     onClick: function (e) {
       if (e.target === e.currentTarget) setShowAdd(false);
@@ -7121,7 +7373,11 @@ function App() {
   }), showExport && /*#__PURE__*/React.createElement(ExportModal, {
     onClose: () => setShowExport(false),
     inv: inv,
-    rates: rates
+    rates: rates,
+    setPdfHTML: function (h) {
+      setPdfHTML(h);
+      setShowExport(false);
+    }
   }), showChat && /*#__PURE__*/React.createElement(ChatModal, {
     onClose: () => setShowChat(false),
     inv: inv,
@@ -7173,7 +7429,8 @@ function App() {
 function ExportModal({
   onClose,
   inv,
-  rates
+  rates,
+  setPdfHTML
 }) {
   const tV = inv.reduce(function (s, i) {
     return s + toCLP(i.amount || 0, i.currency, rates);
@@ -7196,108 +7453,107 @@ function ExportModal({
     bR[i.risk || "medio"] += toCLP(i.amount || 0, i.currency, rates);
   });
   const dlCSV = () => {
-    var sep = ";";
-    var csv = "REPORTE MISFINANZAS" + sep + sep + sep + sep + sep + sep + sep + "\n";
-    csv += "Fecha:" + sep + new Date().toLocaleDateString("es-CL") + sep + sep + sep + sep + sep + sep + "\n";
-    csv += "\n";
-    csv += "DETALLE DE INVERSIONES\n";
-    csv += "Nombre" + sep + "Plataforma" + sep + "Tipo" + sep + "Categoría" + sep + "Riesgo" + sep + "Moneda" + sep + "Valor Actual" + sep + "Monto Invertido" + sep + "Ganancia" + sep + "Retorno %" + "\n";
+    var x = "<html xmlns:x='urn:schemas-microsoft-com:office:excel'><head><meta charset='utf-8'>";
+    x += "<style>table{border-collapse:collapse}th{background:#0A2540;color:#fff;padding:8px;border:1px solid #ccc;font-weight:bold}td{padding:6px;border:1px solid #ccc}.t{background:#F0F2F5;font-weight:bold}.n{text-align:right}.g{color:#00A67E}.r{color:#EF4444}h2{color:#0A2540}</style></head><body>";
+    x += "<h1>Reporte MisFinanzas</h1><p>Generado el " + new Date().toLocaleDateString("es-CL") + "</p>";
+    x += "<h2>Detalle de Inversiones</h2><table><tr><th>Nombre</th><th>Plataforma</th><th>Tipo</th><th>Categoria</th><th>Riesgo</th><th>Moneda</th><th>Valor Actual</th><th>Invertido</th><th>Ganancia</th><th>Retorno</th></tr>";
     inv.forEach(function (i) {
       var dep = getDep(i);
       var g = (i.amount || 0) - dep;
-      var r = dep > 0 ? (g / dep * 100).toFixed(1) : "0";
-      csv += i.name + sep + i.platform + sep + i.type + sep + i.category + sep + (i.risk || "medio") + sep + (i.currency || "CLP") + sep + (i.amount || 0) + sep + dep + sep + g + sep + r + "%" + "\n";
+      var rr = dep > 0 ? (g / dep * 100).toFixed(1) : "0";
+      x += "<tr><td>" + i.name + "</td><td>" + i.platform + "</td><td>" + i.type + "</td><td>" + (i.category || "") + "</td><td>" + (i.risk || "medio") + "</td><td>" + (i.currency || "CLP") + "</td><td class='n'>" + (i.amount || 0) + "</td><td class='n'>" + dep + "</td><td class='n " + (g >= 0 ? "g" : "r") + "'>" + g + "</td><td class='n " + (g >= 0 ? "g" : "r") + "'>" + rr + "%</td></tr>";
     });
-    csv += "\n";
-    csv += "TOTALES" + sep + sep + sep + sep + sep + sep + tV + sep + tD + sep + (tV - tD) + sep + (tD > 0 ? ((tV - tD) / tD * 100).toFixed(1) : "0") + "%" + "\n";
-    csv += "\n";
-    csv += "DISTRIBUCIÓN POR CATEGORÍA\n";
-    csv += "Categoría" + sep + "Monto" + sep + "Porcentaje" + "\n";
+    x += "<tr class='t'><td colspan='6'>TOTAL (CLP)</td><td class='n'>" + Math.round(tV) + "</td><td class='n'>" + Math.round(tC) + "</td><td class='n'>" + Math.round(tV - tC) + "</td><td class='n'>" + (tC > 0 ? ((tV - tC) / tC * 100).toFixed(1) : "0") + "%</td></tr></table>";
+    x += "<h2>Por Categoria</h2><table><tr><th>Categoria</th><th>Monto</th><th>Porcentaje</th></tr>";
     Object.entries(bC).sort(function (a, b) {
       return b[1] - a[1];
     }).forEach(function (e) {
-      csv += e[0] + sep + Math.round(e[1]) + sep + (tV > 0 ? (e[1] / tV * 100).toFixed(1) : "0") + "%" + "\n";
+      x += "<tr><td>" + e[0] + "</td><td class='n'>" + Math.round(e[1]) + "</td><td class='n'>" + (tV > 0 ? (e[1] / tV * 100).toFixed(1) : "0") + "%</td></tr>";
     });
-    csv += "\n";
-    csv += "DISTRIBUCIÓN POR RIESGO\n";
-    csv += "Nivel" + sep + "Monto" + sep + "Porcentaje" + "\n";
+    x += "</table>";
+    x += "<h2>Por Riesgo</h2><table><tr><th>Nivel</th><th>Monto</th><th>Porcentaje</th></tr>";
     ["bajo", "medio", "alto"].forEach(function (r) {
-      if (bR[r] > 0) csv += rl[r] + sep + Math.round(bR[r]) + sep + (tV > 0 ? (bR[r] / tV * 100).toFixed(1) : "0") + "%" + "\n";
+      if (bR[r] > 0) x += "<tr><td>" + rl[r] + "</td><td class='n'>" + Math.round(bR[r]) + "</td><td class='n'>" + (tV > 0 ? (bR[r] / tV * 100).toFixed(1) : "0") + "%</td></tr>";
     });
-    csv += "\n";
-    csv += "DISTRIBUCIÓN POR PLATAFORMA\n";
-    csv += "Plataforma" + sep + "Monto" + sep + "Porcentaje" + "\n";
-    var plats = {};
+    x += "</table>";
+    x += "<h2>Por Plataforma</h2><table><tr><th>Plataforma</th><th>Monto</th><th>Porcentaje</th></tr>";
+    var pl = {};
     inv.forEach(function (i) {
       var p = i.platform || "Otro";
-      plats[p] = (plats[p] || 0) + toCLP(i.amount || 0, i.currency, rates);
+      pl[p] = (pl[p] || 0) + toCLP(i.amount || 0, i.currency, rates);
     });
-    Object.entries(plats).sort(function (a, b) {
+    Object.entries(pl).sort(function (a, b) {
       return b[1] - a[1];
     }).forEach(function (e) {
-      csv += e[0] + sep + Math.round(e[1]) + sep + (tV > 0 ? (e[1] / tV * 100).toFixed(1) : "0") + "%" + "\n";
+      x += "<tr><td>" + e[0] + "</td><td class='n'>" + Math.round(e[1]) + "</td><td class='n'>" + (tV > 0 ? (e[1] / tV * 100).toFixed(1) : "0") + "%</td></tr>";
     });
-    csv += "\n";
-    csv += "FAMILIAR VS INDIVIDUAL\n";
-    csv += "Tipo" + sep + "Monto" + sep + "Porcentaje" + "\n";
-    var famT = inv.filter(function (i) {
+    x += "</table>";
+    var fT = inv.filter(function (i) {
       return i.type === "familiar";
     }).reduce(function (s, i) {
       return s + toCLP(i.amount || 0, i.currency, rates);
     }, 0);
-    var indT = inv.filter(function (i) {
+    var iT = inv.filter(function (i) {
       return i.type === "individual";
     }).reduce(function (s, i) {
       return s + toCLP(i.amount || 0, i.currency, rates);
     }, 0);
-    csv += "Familiar" + sep + Math.round(famT) + sep + (tV > 0 ? (famT / tV * 100).toFixed(1) : "0") + "%" + "\n";
-    csv += "Individual" + sep + Math.round(indT) + sep + (tV > 0 ? (indT / tV * 100).toFixed(1) : "0") + "%" + "\n";
-    var blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8"
+    x += "<h2>Familiar vs Individual</h2><table><tr><th>Tipo</th><th>Monto</th><th>Porcentaje</th></tr>";
+    x += "<tr><td>Familiar</td><td class='n'>" + Math.round(fT) + "</td><td class='n'>" + (tV > 0 ? (fT / tV * 100).toFixed(1) : "0") + "%</td></tr>";
+    x += "<tr><td>Individual</td><td class='n'>" + Math.round(iT) + "</td><td class='n'>" + (tV > 0 ? (iT / tV * 100).toFixed(1) : "0") + "%</td></tr></table>";
+    x += "</body></html>";
+    var blob = new Blob([x], {
+      type: "application/vnd.ms-excel"
     });
+    var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "MisFinanzas_Reporte_" + new Date().toISOString().split("T")[0] + ".csv";
+    a.href = url;
+    a.download = "MisFinanzas_" + new Date().toISOString().split("T")[0] + ".xls";
+    document.body.appendChild(a);
     a.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
   };
   const dlPDF = () => {
-    const date = new Date().toLocaleDateString("es-CL", {
+    var d2 = new Date().toLocaleDateString("es-CL", {
       day: "numeric",
       month: "long",
       year: "numeric"
     });
-    var catRows = "";
-    Object.entries(bC).sort(function (a, b) {
-      return b[1] - a[1];
-    }).forEach(function (e) {
-      var c = e[0],
-        v = e[1];
-      catRows += '<tr><td>' + c + '</td><td style="text-align:right">' + fmt(v) + '</td><td style="text-align:right">' + (tV > 0 ? (v / tV * 100).toFixed(1) : 0) + '%</td></tr>';
-    });
-    var riskRows = "";
-    ["bajo", "medio", "alto"].forEach(function (r) {
-      if (bR[r] > 0) riskRows += '<tr><td>' + rl[r] + '</td><td style="text-align:right">' + fmt(Math.round(bR[r])) + '</td><td style="text-align:right">' + (tV > 0 ? (bR[r] / tV * 100).toFixed(1) : 0) + '%</td></tr>';
-    });
-    var invRows = "";
+    var h = "";
+    h += "<div style='font-family:Inter,sans-serif;max-width:800px;margin:0 auto;padding:20px'>";
+    h += "<div style='text-align:center;margin-bottom:24px'><h1 style='color:#0A2540;margin:0'>Reporte de Portafolio</h1><p style='color:#94A3B8'>Generado el " + d2 + " - MisFinanzas</p></div>";
+    h += "<div style='display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap'>";
+    h += "<div style='flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center'><div style='font-size:11px;color:#94A3B8'>PATRIMONIO</div><div style='font-size:22px;font-weight:700'>" + fmt(tV) + "</div></div>";
+    h += "<div style='flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center'><div style='font-size:11px;color:#94A3B8'>APORTADO</div><div style='font-size:22px;font-weight:700'>" + fmt(tC) + "</div></div>";
+    h += "<div style='flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center'><div style='font-size:11px;color:#94A3B8'>GANANCIA</div><div style='font-size:22px;font-weight:700;color:" + (tV - tC >= 0 ? "#00A67E" : "#EF4444") + "'>" + fmt(tV - tC) + "</div></div>";
+    h += "<div style='flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center'><div style='font-size:11px;color:#94A3B8'>RETORNO</div><div style='font-size:22px;font-weight:700;color:" + (tV - tC >= 0 ? "#00A67E" : "#EF4444") + "'>" + fP(tC > 0 ? (tV - tC) / tC * 100 : 0) + "</div></div></div>";
+    h += "<h2 style='color:#0A2540;font-size:16px'>Detalle de Inversiones</h2>";
+    h += "<table style='width:100%;border-collapse:collapse;font-size:11px;margin-bottom:20px'><thead><tr style='background:#0A2540;color:#fff'><th style='padding:6px;text-align:left'>Nombre</th><th style='padding:6px'>Plat.</th><th style='padding:6px'>Cat.</th><th style='padding:6px'>Riesgo</th><th style='padding:6px;text-align:right'>Valor</th><th style='padding:6px;text-align:right'>Aportado</th><th style='padding:6px;text-align:right'>Ganancia</th><th style='padding:6px;text-align:right'>Ret.</th></tr></thead><tbody>";
     inv.forEach(function (i) {
       var dep = getDep(i);
       var g = (i.amount || 0) - dep;
-      var r = dep > 0 ? (g / dep * 100).toFixed(1) : "0";
-      var color = g >= 0 ? "#00A67E" : "#EF4444";
-      invRows += '<tr><td>' + i.name + '</td><td>' + i.platform + '</td><td>' + (i.category || "") + '</td><td>' + (i.risk || "medio") + '</td><td style="text-align:right">' + fmtCur(i.amount, i.currency) + '</td><td style="text-align:right">' + fmtCur(dep, i.currency) + '</td><td style="text-align:right;color:' + color + '">' + fmtCur(g, i.currency) + '</td><td style="text-align:right;color:' + color + '">' + r + '%</td></tr>';
+      var r2 = dep > 0 ? (g / dep * 100).toFixed(1) : "0";
+      var clr = g >= 0 ? "#00A67E" : "#EF4444";
+      h += "<tr style='border-bottom:1px solid #E2E8F0'><td style='padding:6px'>" + i.name + "</td><td style='padding:6px'>" + i.platform + "</td><td style='padding:6px'>" + (i.category || "") + "</td><td style='padding:6px'>" + (i.risk || "medio") + "</td><td style='padding:6px;text-align:right'>" + fmtCur(i.amount, i.currency) + "</td><td style='padding:6px;text-align:right'>" + fmtCur(dep, i.currency) + "</td><td style='padding:6px;text-align:right;color:" + clr + "'>" + fmtCur(g, i.currency) + "</td><td style='padding:6px;text-align:right;color:" + clr + "'>" + r2 + "%</td></tr>";
     });
-    var h = '<div style="font-family:Inter,sans-serif;max-width:800px;margin:0 auto;padding:20px">';
-    h += '<div style="text-align:center;margin-bottom:24px"><h1 style="color:#0A2540;margin:0">Reporte de Portafolio</h1><p style="color:#94A3B8">Generado el ' + date + ' - MisFinanzas</p></div>';
-    h += '<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">';
-    h += '<div style="flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase">Patrimonio</div><div style="font-size:22px;font-weight:700;color:#0A2540">' + fmt(tV) + '</div></div>';
-    h += '<div style="flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase">Aportado</div><div style="font-size:22px;font-weight:700;color:#0A2540">' + fmt(tD) + '</div></div>';
-    h += '<div style="flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase">Ganancia</div><div style="font-size:22px;font-weight:700;color:' + (tV - tD >= 0 ? "#00A67E" : "#EF4444") + '">' + fmt(tV - tD) + '</div></div>';
-    h += '<div style="flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase">Retorno</div><div style="font-size:22px;font-weight:700;color:' + (tV - tD >= 0 ? "#00A67E" : "#EF4444") + '">' + fP(tD > 0 ? (tV - tD) / tD * 100 : 0) + '</div></div></div>';
-    h += '<h2 style="color:#0A2540;font-size:16px">Detalle de Inversiones</h2>';
-    h += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px"><thead><tr style="background:#0A2540;color:#fff"><th style="padding:8px;text-align:left">Nombre</th><th style="padding:8px">Plataforma</th><th style="padding:8px">Categoría</th><th style="padding:8px">Riesgo</th><th style="padding:8px;text-align:right">Valor</th><th style="padding:8px;text-align:right">Aportado</th><th style="padding:8px;text-align:right">Ganancia</th><th style="padding:8px;text-align:right">Retorno</th></tr></thead><tbody>' + invRows + '</tbody></table>';
-    h += '<div style="display:flex;gap:20px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><h2 style="color:#0A2540;font-size:16px">Por Categoría</h2><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#F0F2F5"><th style="padding:6px;text-align:left">Categoría</th><th style="padding:6px;text-align:right">Monto</th><th style="padding:6px;text-align:right">%</th></tr></thead><tbody>' + catRows + '</tbody></table></div>';
-    h += '<div style="flex:1;min-width:200px"><h2 style="color:#0A2540;font-size:16px">Por Riesgo</h2><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#F0F2F5"><th style="padding:6px;text-align:left">Nivel</th><th style="padding:6px;text-align:right">Monto</th><th style="padding:6px;text-align:right">%</th></tr></thead><tbody>' + riskRows + '</tbody></table></div></div>';
-    h += '<p style="text-align:center;color:#94A3B8;font-size:11px;margin-top:24px">Generado por MisFinanzas - No constituye asesoría financiera</p></div>';
+    h += "</tbody></table>";
+    h += "<div style='display:flex;gap:20px;flex-wrap:wrap'>";
+    h += "<div style='flex:1;min-width:200px'><h2 style='font-size:14px'>Por Categoría</h2><table style='width:100%;border-collapse:collapse;font-size:12px'><thead><tr style='background:#F0F2F5'><th style='padding:6px;text-align:left'>Categoría</th><th style='padding:6px;text-align:right'>Monto</th><th style='padding:6px;text-align:right'>%</th></tr></thead><tbody>";
+    Object.entries(bC).sort(function (a, b) {
+      return b[1] - a[1];
+    }).forEach(function (e) {
+      h += "<tr><td style='padding:4px'>" + e[0] + "</td><td style='padding:4px;text-align:right'>" + fmt(Math.round(e[1])) + "</td><td style='padding:4px;text-align:right'>" + (tV > 0 ? (e[1] / tV * 100).toFixed(1) : "0") + "%</td></tr>";
+    });
+    h += "</tbody></table></div>";
+    h += "<div style='flex:1;min-width:200px'><h2 style='font-size:14px'>Por Riesgo</h2><table style='width:100%;border-collapse:collapse;font-size:12px'><thead><tr style='background:#F0F2F5'><th style='padding:6px;text-align:left'>Nivel</th><th style='padding:6px;text-align:right'>Monto</th><th style='padding:6px;text-align:right'>%</th></tr></thead><tbody>";
+    ["bajo", "medio", "alto"].forEach(function (r3) {
+      if (bR[r3] > 0) h += "<tr><td style='padding:4px'>" + rl[r3] + "</td><td style='padding:4px;text-align:right'>" + fmt(Math.round(bR[r3])) + "</td><td style='padding:4px;text-align:right'>" + (tV > 0 ? (bR[r3] / tV * 100).toFixed(1) : "0") + "%</td></tr>";
+    });
+    h += "</tbody></table></div></div>";
+    h += "<p style='text-align:center;color:#94A3B8;font-size:11px;margin-top:24px'>Generado por MisFinanzas - No constituye asesoria financiera</p></div>";
     setPdfHTML(h);
   };
   return /*#__PURE__*/React.createElement("div", {

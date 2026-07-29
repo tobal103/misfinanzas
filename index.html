@@ -475,7 +475,7 @@ function Login({
         sto.set("u:demo@demo.com", du);
         sto.set("inv:demo@demo.com", demo.investments);
         sto.set("h:demo@demo.com", demo.history);
-        sto.set("riskTarget", {
+        sto.set("rt:demo@demo.com", {
           familiar: {
             bajo: 25,
             medio: 45,
@@ -5801,6 +5801,7 @@ function App() {
   const [hist, setHist] = useState([]);
   const [tab, setTab] = useState("home");
   const [showAdd, setShowAdd] = useState(false);
+  const [pdfHTML, setPdfHTML] = useState("");
   const [showTutorial, setShowTutorial] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showImp, setShowImp] = useState(false);
@@ -5860,6 +5861,8 @@ function App() {
         setInv(sto.get(`inv:${s.email}`) || []);
         setHist(sto.get(`h:${s.email}`) || []);
         setGKey(sto.get(`gk:${s.email}`) || "");
+        var rt = sto.get("rt:" + s.email);
+        if (rt) setRiskTarget(rt);
       }
     }
     fetch("https://mindicador.cl/api").then(function (r) {
@@ -5892,6 +5895,8 @@ function App() {
     setInv(sto.get(`inv:${u.email}`) || []);
     setHist(sto.get(`h:${u.email}`) || []);
     setGKey(sto.get(`gk:${u.email}`) || "");
+    var rt3 = sto.get("rt:" + u.email);
+    if (rt3) setRiskTarget(rt3);
   };
   const logout = () => {
     sto.del("sess");
@@ -5973,7 +5978,61 @@ function App() {
     onTutorial: function () {
       setShowTutorial(true);
     }
-  }), showTutorial && /*#__PURE__*/React.createElement(Tutorial, {
+  }), pdfHTML && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 200,
+      background: "#fff",
+      overflow: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "sticky",
+      top: 0,
+      background: "#0A2540",
+      padding: "12px 20px",
+      display: "flex",
+      gap: 10,
+      zIndex: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      window.print();
+    },
+    style: {
+      flex: 1,
+      padding: 12,
+      background: "#00A67E",
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "Guardar PDF"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setPdfHTML("");
+    },
+    style: {
+      padding: "12px 20px",
+      background: "#EF4444",
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "Cerrar")), /*#__PURE__*/React.createElement("div", {
+    dangerouslySetInnerHTML: {
+      __html: pdfHTML
+    }
+  })), showTutorial && /*#__PURE__*/React.createElement(Tutorial, {
     onClose: function () {
       setShowTutorial(false);
     },
@@ -6905,7 +6964,8 @@ function App() {
         individual: riskTarget.individual
       };
       setRiskTarget(nt);
-      sto.set("riskTarget", nt);
+      sto.set("rt:" + user.email, nt);
+      flash("Guardado ✓");
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6929,7 +6989,8 @@ function App() {
         individual: v
       };
       setRiskTarget(nt);
-      sto.set("riskTarget", nt);
+      sto.set("rt:" + user.email, nt);
+      flash("Guardado ✓");
     }
   }))), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
@@ -6978,7 +7039,61 @@ function App() {
       textAlign: "center",
       marginTop: 8
     }
-  }, "Si tienes la app instalada y no ves los cambios, toca \"Actualizar App\""))), showTutorial && /*#__PURE__*/React.createElement(Tutorial, {
+  }, "Si tienes la app instalada y no ves los cambios, toca \"Actualizar App\""))), pdfHTML && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 200,
+      background: "#fff",
+      overflow: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "sticky",
+      top: 0,
+      background: "#0A2540",
+      padding: "12px 20px",
+      display: "flex",
+      gap: 10,
+      zIndex: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      window.print();
+    },
+    style: {
+      flex: 1,
+      padding: 12,
+      background: "#00A67E",
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "Guardar PDF"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setPdfHTML("");
+    },
+    style: {
+      padding: "12px 20px",
+      background: "#EF4444",
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "Cerrar")), /*#__PURE__*/React.createElement("div", {
+    dangerouslySetInnerHTML: {
+      __html: pdfHTML
+    }
+  })), showTutorial && /*#__PURE__*/React.createElement(Tutorial, {
     onClose: function () {
       setShowTutorial(false);
     },
@@ -7081,19 +7196,62 @@ function ExportModal({
     bR[i.risk || "medio"] += toCLP(i.amount || 0, i.currency, rates);
   });
   const dlCSV = () => {
-    var csv = "Nombre,Plataforma,Tipo,Categoria,Riesgo,Valor Actual,Aportado,Ganancia,Retorno %,Moneda\n";
-    inv.forEach(i => {
-      const d = getDep(i);
-      const g = i.amount - d;
-      const r = d > 0 ? (i.amount - d) / d * 100 : 0;
-      csv += '"' + i.name + '","' + (i.platform || "") + '","' + i.type + '","' + i.category + '","' + rl[i.risk || "medio"] + '",' + Math.round(i.amount) + "," + Math.round(d) + "," + Math.round(g) + "," + r.toFixed(1) + "," + (i.currency || "CLP") + "\n";
+    var sep = ";";
+    var csv = "REPORTE MISFINANZAS" + sep + sep + sep + sep + sep + sep + sep + "\n";
+    csv += "Fecha:" + sep + new Date().toLocaleDateString("es-CL") + sep + sep + sep + sep + sep + sep + "\n";
+    csv += "\n";
+    csv += "DETALLE DE INVERSIONES\n";
+    csv += "Nombre" + sep + "Plataforma" + sep + "Tipo" + sep + "Categoría" + sep + "Riesgo" + sep + "Moneda" + sep + "Valor Actual" + sep + "Monto Invertido" + sep + "Ganancia" + sep + "Retorno %" + "\n";
+    inv.forEach(function (i) {
+      var dep = getDep(i);
+      var g = (i.amount || 0) - dep;
+      var r = dep > 0 ? (g / dep * 100).toFixed(1) : "0";
+      csv += i.name + sep + i.platform + sep + i.type + sep + i.category + sep + (i.risk || "medio") + sep + (i.currency || "CLP") + sep + (i.amount || 0) + sep + dep + sep + g + sep + r + "%" + "\n";
     });
     csv += "\n";
-    csv += "TOTAL,,,,,," + Math.round(tV) + "," + Math.round(tC) + "," + Math.round(tV - tC) + "," + tR.toFixed(1) + "\n";
-    csv += "\nDistribución por Riesgo\n";
-    ["bajo", "medio", "alto"].forEach(function (r) {
-      if (bR[r] > 0) csv += rl[r] + "," + Math.round(bR[r]) + "," + (tV > 0 ? (bR[r] / tV * 100).toFixed(1) : 0) + "%\n";
+    csv += "TOTALES" + sep + sep + sep + sep + sep + sep + tV + sep + tD + sep + (tV - tD) + sep + (tD > 0 ? ((tV - tD) / tD * 100).toFixed(1) : "0") + "%" + "\n";
+    csv += "\n";
+    csv += "DISTRIBUCIÓN POR CATEGORÍA\n";
+    csv += "Categoría" + sep + "Monto" + sep + "Porcentaje" + "\n";
+    Object.entries(bC).sort(function (a, b) {
+      return b[1] - a[1];
+    }).forEach(function (e) {
+      csv += e[0] + sep + Math.round(e[1]) + sep + (tV > 0 ? (e[1] / tV * 100).toFixed(1) : "0") + "%" + "\n";
     });
+    csv += "\n";
+    csv += "DISTRIBUCIÓN POR RIESGO\n";
+    csv += "Nivel" + sep + "Monto" + sep + "Porcentaje" + "\n";
+    ["bajo", "medio", "alto"].forEach(function (r) {
+      if (bR[r] > 0) csv += rl[r] + sep + Math.round(bR[r]) + sep + (tV > 0 ? (bR[r] / tV * 100).toFixed(1) : "0") + "%" + "\n";
+    });
+    csv += "\n";
+    csv += "DISTRIBUCIÓN POR PLATAFORMA\n";
+    csv += "Plataforma" + sep + "Monto" + sep + "Porcentaje" + "\n";
+    var plats = {};
+    inv.forEach(function (i) {
+      var p = i.platform || "Otro";
+      plats[p] = (plats[p] || 0) + toCLP(i.amount || 0, i.currency, rates);
+    });
+    Object.entries(plats).sort(function (a, b) {
+      return b[1] - a[1];
+    }).forEach(function (e) {
+      csv += e[0] + sep + Math.round(e[1]) + sep + (tV > 0 ? (e[1] / tV * 100).toFixed(1) : "0") + "%" + "\n";
+    });
+    csv += "\n";
+    csv += "FAMILIAR VS INDIVIDUAL\n";
+    csv += "Tipo" + sep + "Monto" + sep + "Porcentaje" + "\n";
+    var famT = inv.filter(function (i) {
+      return i.type === "familiar";
+    }).reduce(function (s, i) {
+      return s + toCLP(i.amount || 0, i.currency, rates);
+    }, 0);
+    var indT = inv.filter(function (i) {
+      return i.type === "individual";
+    }).reduce(function (s, i) {
+      return s + toCLP(i.amount || 0, i.currency, rates);
+    }, 0);
+    csv += "Familiar" + sep + Math.round(famT) + sep + (tV > 0 ? (famT / tV * 100).toFixed(1) : "0") + "%" + "\n";
+    csv += "Individual" + sep + Math.round(indT) + sep + (tV > 0 ? (indT / tV * 100).toFixed(1) : "0") + "%" + "\n";
     var blob = new Blob(["\uFEFF" + csv], {
       type: "text/csv;charset=utf-8"
     });
@@ -7103,7 +7261,6 @@ function ExportModal({
     a.click();
   };
   const dlPDF = () => {
-    const w = window.open("", "_blank");
     const date = new Date().toLocaleDateString("es-CL", {
       day: "numeric",
       month: "long",
@@ -7115,44 +7272,33 @@ function ExportModal({
     }).forEach(function (e) {
       var c = e[0],
         v = e[1];
-      catRows += "<tr><td>" + c + "</td><td style=\"text-align:right\">" + fmt(v) + "</td><td style=\"text-align:right\">" + (tV > 0 ? (v / tV * 100).toFixed(1) : 0) + "%</td></tr>";
-    });
-    var invRows = "";
-    inv.forEach(function (i) {
-      var d = getDep(i);
-      var g = i.amount - d;
-      var r = d > 0 ? (i.amount - d) / d * 100 : 0;
-      var gc = g >= 0 ? "#059669" : "#EF4444";
-      invRows += "<tr><td>" + i.name + "</td><td>" + (i.platform || "-") + "</td><td>" + i.category + "</td><td>" + rl[i.risk || "medio"] + "</td><td style=\"text-align:right\">" + fmt(i.amount) + "</td><td style=\"text-align:right\">" + fmt(d) + "</td><td style=\"text-align:right;color:" + gc + "\">" + fmt(g) + "</td><td style=\"text-align:right;color:" + gc + "\">" + fP(r) + "</td></tr>";
+      catRows += '<tr><td>' + c + '</td><td style="text-align:right">' + fmt(v) + '</td><td style="text-align:right">' + (tV > 0 ? (v / tV * 100).toFixed(1) : 0) + '%</td></tr>';
     });
     var riskRows = "";
     ["bajo", "medio", "alto"].forEach(function (r) {
-      if (bR[r] > 0) riskRows += "<tr><td>" + rl[r] + "</td><td style=\"text-align:right\">" + fmt(bR[r]) + "</td><td style=\"text-align:right\">" + (tV > 0 ? (bR[r] / tV * 100).toFixed(1) : 0) + "%</td></tr>";
+      if (bR[r] > 0) riskRows += '<tr><td>' + rl[r] + '</td><td style="text-align:right">' + fmt(Math.round(bR[r])) + '</td><td style="text-align:right">' + (tV > 0 ? (bR[r] / tV * 100).toFixed(1) : 0) + '%</td></tr>';
     });
-    var gc2 = tV - tC >= 0 ? "#059669" : "#EF4444";
-    var h = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Reporte</title>";
-    h += "<style>*{margin:0;padding:0;box-sizing:border-box;font-family:Georgia,serif}body{padding:40px;color:#0A2540;font-size:12px}";
-    h += "h1{font-size:22px;margin-bottom:4px}h2{font-size:14px;margin:24px 0 8px;color:#5A6978;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #E2E8F0;padding-bottom:4px}";
-    h += ".sub{color:#5A6978;font-size:12px;margin-bottom:24px}";
-    h += ".summary{display:flex;gap:20px;margin-bottom:24px}.sbox{background:#F8FAFC;border-radius:8px;padding:16px;flex:1;text-align:center}.sbox .lb{font-size:10px;color:#5A6978;text-transform:uppercase}.sbox .vl{font-size:20px;font-weight:700;margin-top:4px}";
-    h += "table{width:100%;border-collapse:collapse;margin-bottom:16px}th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #E2E8F0;font-size:11px}th{background:#F8FAFC;font-weight:600;color:#5A6978;text-transform:uppercase;font-size:10px}";
-    h += ".footer{margin-top:32px;padding-top:12px;border-top:1px solid #E2E8F0;font-size:10px;color:#94A3B8;text-align:center}";
-    h += "@media print{body{padding:20px}}</style></head><body>";
-    h += "<h1>Reporte de Portafolio</h1><div class=\"sub\">Generado el " + date + " - MisFinanzas</div>";
-    h += "<div class=\"summary\">";
-    h += "<div class=\"sbox\"><div class=\"lb\">Patrimonio</div><div class=\"vl\">" + fmt(tV) + "</div></div>";
-    h += "<div class=\"sbox\"><div class=\"lb\">Aportado</div><div class=\"vl\">" + fmt(tC) + "</div></div>";
-    h += "<div class=\"sbox\"><div class=\"lb\">Ganancia</div><div class=\"vl\" style=\"color:" + gc2 + "\">" + fmt(tV - tC) + "</div></div>";
-    h += "<div class=\"sbox\"><div class=\"lb\">Retorno</div><div class=\"vl\" style=\"color:" + gc2 + "\">" + fP(tR) + "</div></div></div>";
-    h += "<h2>Detalle de Inversiones</h2>";
-    h += "<table><thead><tr><th>Nombre</th><th>Plataforma</th><th>Categoria</th><th>Riesgo</th><th style=\"text-align:right\">Valor</th><th style=\"text-align:right\">Aportado</th><th style=\"text-align:right\">Ganancia</th><th style=\"text-align:right\">Retorno</th></tr></thead><tbody>" + invRows;
-    h += "<tr style=\"font-weight:700;border-top:2px solid #0A2540\"><td colspan=\"4\">TOTAL</td><td style=\"text-align:right\">" + fmt(tV) + "</td><td style=\"text-align:right\">" + fmt(tC) + "</td><td style=\"text-align:right;color:" + gc2 + "\">" + fmt(tV - tC) + "</td><td style=\"text-align:right;color:" + gc2 + "\">" + fP(tR) + "</td></tr></tbody></table>";
-    h += "<h2>Por Categoria</h2><table><thead><tr><th>Categoria</th><th style=\"text-align:right\">Monto</th><th style=\"text-align:right\">%</th></tr></thead><tbody>" + catRows + "</tbody></table>";
-    h += "<h2>Por Riesgo</h2><table><thead><tr><th>Nivel</th><th style=\"text-align:right\">Monto</th><th style=\"text-align:right\">%</th></tr></thead><tbody>" + riskRows + "</tbody></table>";
-    h += "<div class=\"footer\">Generado por MisFinanzas - No constituye asesoria financiera</div>";
-    h += "<scr" + "ipt>setTimeout(function(){window.print()},500)</scr" + "ipt></body></html>";
-    w.document.write(h);
-    w.document.close();
+    var invRows = "";
+    inv.forEach(function (i) {
+      var dep = getDep(i);
+      var g = (i.amount || 0) - dep;
+      var r = dep > 0 ? (g / dep * 100).toFixed(1) : "0";
+      var color = g >= 0 ? "#00A67E" : "#EF4444";
+      invRows += '<tr><td>' + i.name + '</td><td>' + i.platform + '</td><td>' + (i.category || "") + '</td><td>' + (i.risk || "medio") + '</td><td style="text-align:right">' + fmtCur(i.amount, i.currency) + '</td><td style="text-align:right">' + fmtCur(dep, i.currency) + '</td><td style="text-align:right;color:' + color + '">' + fmtCur(g, i.currency) + '</td><td style="text-align:right;color:' + color + '">' + r + '%</td></tr>';
+    });
+    var h = '<div style="font-family:Inter,sans-serif;max-width:800px;margin:0 auto;padding:20px">';
+    h += '<div style="text-align:center;margin-bottom:24px"><h1 style="color:#0A2540;margin:0">Reporte de Portafolio</h1><p style="color:#94A3B8">Generado el ' + date + ' - MisFinanzas</p></div>';
+    h += '<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">';
+    h += '<div style="flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase">Patrimonio</div><div style="font-size:22px;font-weight:700;color:#0A2540">' + fmt(tV) + '</div></div>';
+    h += '<div style="flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase">Aportado</div><div style="font-size:22px;font-weight:700;color:#0A2540">' + fmt(tD) + '</div></div>';
+    h += '<div style="flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase">Ganancia</div><div style="font-size:22px;font-weight:700;color:' + (tV - tD >= 0 ? "#00A67E" : "#EF4444") + '">' + fmt(tV - tD) + '</div></div>';
+    h += '<div style="flex:1;min-width:120px;background:#F0F2F5;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase">Retorno</div><div style="font-size:22px;font-weight:700;color:' + (tV - tD >= 0 ? "#00A67E" : "#EF4444") + '">' + fP(tD > 0 ? (tV - tD) / tD * 100 : 0) + '</div></div></div>';
+    h += '<h2 style="color:#0A2540;font-size:16px">Detalle de Inversiones</h2>';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px"><thead><tr style="background:#0A2540;color:#fff"><th style="padding:8px;text-align:left">Nombre</th><th style="padding:8px">Plataforma</th><th style="padding:8px">Categoría</th><th style="padding:8px">Riesgo</th><th style="padding:8px;text-align:right">Valor</th><th style="padding:8px;text-align:right">Aportado</th><th style="padding:8px;text-align:right">Ganancia</th><th style="padding:8px;text-align:right">Retorno</th></tr></thead><tbody>' + invRows + '</tbody></table>';
+    h += '<div style="display:flex;gap:20px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><h2 style="color:#0A2540;font-size:16px">Por Categoría</h2><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#F0F2F5"><th style="padding:6px;text-align:left">Categoría</th><th style="padding:6px;text-align:right">Monto</th><th style="padding:6px;text-align:right">%</th></tr></thead><tbody>' + catRows + '</tbody></table></div>';
+    h += '<div style="flex:1;min-width:200px"><h2 style="color:#0A2540;font-size:16px">Por Riesgo</h2><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#F0F2F5"><th style="padding:6px;text-align:left">Nivel</th><th style="padding:6px;text-align:right">Monto</th><th style="padding:6px;text-align:right">%</th></tr></thead><tbody>' + riskRows + '</tbody></table></div></div>';
+    h += '<p style="text-align:center;color:#94A3B8;font-size:11px;margin-top:24px">Generado por MisFinanzas - No constituye asesoría financiera</p></div>';
+    setPdfHTML(h);
   };
   return /*#__PURE__*/React.createElement("div", {
     style: S.modal,

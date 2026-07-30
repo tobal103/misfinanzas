@@ -3786,6 +3786,56 @@ function Planificar({
       marginBottom: 4
     }
   }, "✨ Recomendación actual"), advice), /*#__PURE__*/React.createElement("div", {
+    style: S.card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 600,
+      marginBottom: 10
+    }
+  }, "📈 Proyección de Patrimonio"), function () {
+    var monthly = parseFloat(amount) || 500000;
+    var annualReturn = 5;
+    var yrs = [5, 10, 15, 20];
+    var current = inv.reduce(function (s, i) {
+      return s + toCLP(i.amount || 0, i.currency, rates);
+    }, 0);
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.t2,
+        marginBottom: 8
+      }
+    }, "Si aportas ", fmt(monthly), "/mes con retorno 5% anual:"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 6
+      }
+    }, yrs.map(function (y) {
+      var fv = current * Math.pow(1 + annualReturn / 100, y) + monthly * 12 * ((Math.pow(1 + annualReturn / 100, y) - 1) / (annualReturn / 100));
+      return /*#__PURE__*/React.createElement("div", {
+        key: y,
+        style: {
+          background: C.inp,
+          borderRadius: 10,
+          padding: 10,
+          textAlign: "center"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.t3
+        }
+      }, y, " años"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 15,
+          fontWeight: 700,
+          color: C.acc
+        }
+      }, fmt(Math.round(fv))));
+    })));
+  }()), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
@@ -5078,6 +5128,52 @@ function Inmobiliario({
         }
       }, r[1]));
     })), /*#__PURE__*/React.createElement("div", {
+      style: S.card
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 600,
+        marginBottom: 6
+      }
+    }, "📈 Proyección valorización"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.t2,
+        marginBottom: 8
+      }
+    }, "Si la propiedad se revaloriza 3% anual:"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6
+      }
+    }, [3, 5, 10].map(function (y) {
+      var fv = dp.valorActual * Math.pow(1.03, y);
+      return /*#__PURE__*/React.createElement("div", {
+        key: y,
+        style: {
+          flex: 1,
+          background: C.inp,
+          borderRadius: 8,
+          padding: 8,
+          textAlign: "center"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.t3
+        }
+      }, y, " años"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 14,
+          fontWeight: 700
+        }
+      }, fmt(Math.round(fv))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.acc
+        }
+      }, "+", fmt(Math.round(fv - dp.valorActual))));
+    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         ...S.card,
         background: c.returnPct >= 0 ? C.accL : C.danL
@@ -6054,6 +6150,7 @@ function App() {
   const [tab, setTab] = useState("home");
   const [showAdd, setShowAdd] = useState(false);
   const [pdfHTML, setPdfHTML] = useState("");
+  const [summary, setSummary] = useState("");
   const [showTutorial, setShowTutorial] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showImp, setShowImp] = useState(false);
@@ -6064,7 +6161,7 @@ function App() {
   const [filter, setFilter] = useState("all");
   const [toast, setToast] = useState("");
   const [gKey, setGKey] = useState("");
-  const [riskTarget, setRiskTarget] = useState(sto.get("riskTarget") || {
+  const [riskTarget, setRiskTarget] = useState({
     familiar: {
       bajo: 30,
       medio: 40,
@@ -6629,7 +6726,47 @@ function App() {
       color: "#fff",
       marginTop: 2
     }
-  }, fmt(fT))))), /*#__PURE__*/React.createElement("div", {
+  }, fmt(fT)))), function () {
+    var pl = sto.get("prop:" + user.email) || [];
+    if (!pl.length) return null;
+    var pT = pl.reduce(function (s, p) {
+      return s + (p.valorActual || p.value || 0);
+    }, 0);
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 12,
+        background: "rgba(255,255,255,0.15)",
+        borderRadius: 12,
+        padding: "10px 12px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "rgba(255,255,255,0.5)",
+        textTransform: "uppercase"
+      }
+    }, "🏠 Con Inmobiliario"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 18,
+        fontWeight: 700,
+        color: "#fff"
+      }
+    }, fmt(tV + pT))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "rgba(255,255,255,0.5)",
+        textAlign: "right"
+      }
+    }, "Propiedades", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 600,
+        color: "#fff"
+      }
+    }, fmt(pT))));
+  }()), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "16px 20px 0"
     }
@@ -6659,6 +6796,168 @@ function App() {
     }
   }, "📥 Importar")), /*#__PURE__*/React.createElement("div", {
     style: {
+      ...S.card,
+      marginTop: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600
+    }
+  }, "📈 Evolución"), function () {
+    if (hist.length < 2) return null;
+    var y = (new Date(hist[hist.length - 1].d) - new Date(hist[0].d)) / (86400000 * 365.25);
+    var base = hist[0].t;
+    if (y < 0.08 || base <= 0) return null;
+    var cg = (Math.pow(tV / base, 1 / y) - 1) * 100;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t3
+      }
+    }, "Anualizado: ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: cg >= 0 ? C.acc : C.dan,
+        fontWeight: 700
+      }
+    }, fP(cg)));
+  }()), hist.length > 1 ? /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 300 70",
+    style: {
+      width: "100%",
+      height: 70,
+      display: "block"
+    }
+  }, function () {
+    var vals = hist.map(function (x) {
+      return x.t;
+    });
+    var mn = Math.min.apply(null, vals),
+      mx = Math.max.apply(null, vals),
+      rg = mx - mn || 1;
+    var pts = hist.map(function (x, i) {
+      return (i / (hist.length - 1) * 284 + 8).toFixed(1) + "," + (62 - (x.t - mn) / rg * 54).toFixed(1);
+    }).join(" ");
+    return [React.createElement("polyline", {
+      key: "a",
+      points: "8,62 " + pts + " 292,62",
+      fill: C.accL,
+      stroke: "none"
+    }), React.createElement("polyline", {
+      key: "b",
+      points: pts,
+      fill: "none",
+      stroke: C.acc,
+      strokeWidth: "2.5",
+      strokeLinejoin: "round"
+    })];
+  }()) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.t3,
+      textAlign: "center",
+      padding: "12px 0"
+    }
+  }, "Actualiza tus inversiones para ver la evolución")), /*#__PURE__*/React.createElement("div", {
+    style: S.card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      marginBottom: 8
+    }
+  }, "⚖️ Tu retorno vs mercado"), function () {
+    var bench = [["Tu portafolio", tR, C.acc], ["UF (inflación)", 4.2, C.t2], ["S&P 500 hist.", 10.5, C.t2], ["IPSA hist.", 6.8, C.t2]];
+    var mx = Math.max.apply(null, bench.map(function (b) {
+      return Math.abs(b[1]);
+    })) || 1;
+    return bench.map(function (b) {
+      return /*#__PURE__*/React.createElement("div", {
+        key: b[0],
+        style: {
+          marginBottom: 6
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 12,
+          marginBottom: 2
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          color: b[0] === "Tu portafolio" ? C.t1 : C.t2,
+          fontWeight: b[0] === "Tu portafolio" ? 600 : 400
+        }
+      }, b[0]), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontWeight: 600,
+          color: b[2]
+        }
+      }, fP(b[1]))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          height: 6,
+          background: C.inp,
+          borderRadius: 3
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          height: 6,
+          borderRadius: 3,
+          background: b[2],
+          width: Math.abs(b[1]) / mx * 100 + "%"
+        }
+      })));
+    });
+  }(), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t3,
+      marginTop: 4
+    }
+  }, "Referencias históricas anuales promedio")), summary && /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.card,
+      background: C.accL
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600
+    }
+  }, "📊 Resumen IA"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setSummary("");
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      fontSize: 16,
+      color: C.t3
+    }
+  }, "✕")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      lineHeight: 1.6,
+      whiteSpace: "pre-wrap"
+    }
+  }, summary)), /*#__PURE__*/React.createElement("div", {
+    style: {
       display: "flex",
       gap: 10,
       marginTop: 8
@@ -6675,6 +6974,48 @@ function App() {
       fontSize: 14
     }
   }, "💬 Asesor IA"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      if (!gKey) {
+        flash("Activa Gemini en Ajustes");
+        return;
+      }
+      setSummary("Generando...");
+      var ctx = "";
+      inv.forEach(function (i) {
+        var dp2 = getDep(i);
+        ctx += i.name + ": " + fmtCur(i.amount, i.currency) + " (" + fP(dp2 > 0 ? (i.amount - dp2) / dp2 * 100 : 0) + "); ";
+      });
+      fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=" + gKey, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": gKey
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: "Asesor financiero chileno. Resumen ejecutivo de este portafolio: " + ctx + ". Patrimonio " + fmt(tV) + ", retorno " + fP(tR) + ". Da: 1) Estado general 2) Que va bien 3) Que ajustar 4) Una accion concreta. Maximo 150 palabras, emojis, espanol."
+            }]
+          }]
+        })
+      }).then(function (r) {
+        return r.json();
+      }).then(function (d) {
+        setSummary(d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts && d.candidates[0].content.parts[0].text || "Error");
+      }).catch(function () {
+        setSummary("Error de conexion");
+      });
+    },
+    style: {
+      ...S.btn,
+      flex: 1,
+      background: "none",
+      border: "2px solid " + C.brd,
+      color: C.t1,
+      padding: 12,
+      fontSize: 13
+    }
+  }, "📊 Resumen IA"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowExport(true),
     style: {
       ...S.btn,
@@ -7002,6 +7343,56 @@ function App() {
     items: inv,
     rates: rates
   }), /*#__PURE__*/React.createElement("div", {
+    style: S.card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      marginBottom: 8
+    }
+  }, "⚠️ Concentración"), function () {
+    var byPlat = {};
+    inv.forEach(function (i) {
+      var p = i.platform || "Otro";
+      byPlat[p] = (byPlat[p] || 0) + toCLP(i.amount || 0, i.currency, rates);
+    });
+    var total = inv.reduce(function (s, i) {
+      return s + toCLP(i.amount || 0, i.currency, rates);
+    }, 0);
+    var sorted = Object.entries(byPlat).sort(function (a, b) {
+      return b[1] - a[1];
+    });
+    var top = sorted[0];
+    var pct = total > 0 ? (top[1] / total * 100).toFixed(0) : 0;
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.t2
+      }
+    }, "Mayor concentración: ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 600,
+        color: C.t1
+      }
+    }, top ? top[0] : ""), " con ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 700,
+        color: pct > 60 ? C.dan : pct > 40 ? C.warn : C.acc
+      }
+    }, pct, "%")), pct > 50 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.dan,
+        marginTop: 4
+      }
+    }, "⚠ Más del 50% en una plataforma. Considera diversificar."), pct <= 50 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.acc,
+        marginTop: 4
+      }
+    }, "✓ Buena diversificación entre plataformas."));
+  }()), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16,
       fontWeight: 700,
@@ -7264,7 +7655,87 @@ function App() {
       color: C.acc,
       marginTop: 8
     }
-  }, "⚙️ Ajustes"), /*#__PURE__*/React.createElement("button", {
+  }, "⚙️ Ajustes"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.card,
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 700,
+      marginBottom: 10
+    }
+  }, "💾 Backup"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      var data = {
+        inv: inv,
+        hist: hist,
+        props: sto.get("prop:" + user.email) || [],
+        goals: sto.get("goals:" + user.email) || [],
+        rt: sto.get("rt:" + user.email) || {},
+        gk: gKey,
+        user: user
+      };
+      var blob = new Blob([JSON.stringify(data)], {
+        type: "application/json"
+      });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "MisFinanzas_backup_" + new Date().toISOString().split("T")[0] + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      flash("Backup descargado ✓");
+    },
+    style: {
+      ...S.btn,
+      background: C.acc,
+      color: "#fff",
+      marginBottom: 8
+    }
+  }, "📤 Exportar datos"), /*#__PURE__*/React.createElement("label", {
+    style: {
+      ...S.btn,
+      background: "none",
+      border: "2px solid " + C.acc,
+      color: C.acc,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: ".json",
+    style: {
+      display: "none"
+    },
+    onChange: function (e) {
+      var f2 = e.target.files[0];
+      if (!f2) return;
+      var r = new FileReader();
+      r.onload = function (ev) {
+        try {
+          var d = JSON.parse(ev.target.result);
+          if (d.inv) setInv(d.inv);
+          if (d.inv) sto.set("inv:" + user.email, d.inv);
+          if (d.hist) setHist(d.hist);
+          if (d.hist) sto.set("h:" + user.email, d.hist);
+          if (d.props) sto.set("prop:" + user.email, d.props);
+          if (d.goals) sto.set("goals:" + user.email, d.goals);
+          if (d.rt) {
+            setRiskTarget(d.rt);
+            sto.set("rt:" + user.email, d.rt);
+          }
+          flash("Datos restaurados ✓");
+        } catch (err) {
+          flash("Error en archivo");
+        }
+      };
+      r.readAsText(f2);
+    }
+  }), "📥 Importar backup")), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       window.location.reload(true);
     },
@@ -7453,7 +7924,7 @@ function ExportModal({
     bR[i.risk || "medio"] += toCLP(i.amount || 0, i.currency, rates);
   });
   const dlCSV = () => {
-    var x = "<html xmlns:x='urn:schemas-microsoft-com:office:excel'><head><meta charset='utf-8'>";
+    var x = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><meta http-equiv='content-type' content='text/html; charset=UTF-8'><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Portafolio</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->";
     x += "<style>table{border-collapse:collapse}th{background:#0A2540;color:#fff;padding:8px;border:1px solid #ccc;font-weight:bold}td{padding:6px;border:1px solid #ccc}.t{background:#F0F2F5;font-weight:bold}.n{text-align:right}.g{color:#00A67E}.r{color:#EF4444}h2{color:#0A2540}</style></head><body>";
     x += "<h1>Reporte MisFinanzas</h1><p>Generado el " + new Date().toLocaleDateString("es-CL") + "</p>";
     x += "<h2>Detalle de Inversiones</h2><table><tr><th>Nombre</th><th>Plataforma</th><th>Tipo</th><th>Categoria</th><th>Riesgo</th><th>Moneda</th><th>Valor Actual</th><th>Invertido</th><th>Ganancia</th><th>Retorno</th></tr>";
@@ -7514,7 +7985,33 @@ function ExportModal({
     setTimeout(function () {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    }, 100);
+      onClose();
+    }, 300);
+  };
+  const dlRaw = () => {
+    var sep = ";";
+    var c = "Nombre" + sep + "Plataforma" + sep + "Tipo" + sep + "Categoria" + sep + "Riesgo" + sep + "Moneda" + sep + "Valor" + sep + "Invertido" + sep + "Ganancia" + sep + "Retorno\r\n";
+    inv.forEach(function (i) {
+      var d3 = getDep(i);
+      var g = (i.amount || 0) - d3;
+      var r4 = d3 > 0 ? (g / d3 * 100).toFixed(1) : "0";
+      c += i.name + sep + i.platform + sep + i.type + sep + (i.category || "") + sep + (i.risk || "medio") + sep + (i.currency || "CLP") + sep + (i.amount || 0) + sep + d3 + sep + g + sep + r4 + "\r\n";
+    });
+    c += "TOTAL" + sep + sep + sep + sep + sep + "CLP" + sep + Math.round(tV) + sep + Math.round(tC) + sep + Math.round(tV - tC) + sep + (tC > 0 ? ((tV - tC) / tC * 100).toFixed(1) : "0") + "\r\n";
+    var b = new Blob(["\uFEFF" + c], {
+      type: "text/csv;charset=utf-8"
+    });
+    var u = URL.createObjectURL(b);
+    var a = document.createElement("a");
+    a.href = u;
+    a.download = "MisFinanzas_" + new Date().toISOString().split("T")[0] + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(u);
+      onClose();
+    }, 300);
   };
   const dlPDF = () => {
     var d2 = new Date().toLocaleDateString("es-CL", {
@@ -7597,22 +8094,30 @@ function ExportModal({
       marginBottom: 10
     },
     onClick: dlPDF
-  }, "📄 Reporte PDF (imprimir/guardar)"), /*#__PURE__*/React.createElement("button", {
+  }, "📄 Reporte PDF"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.btn,
+      background: C.acc,
+      color: "#fff",
+      marginBottom: 10
+    },
+    onClick: dlCSV
+  }, "📊 Planilla Excel (.xls)"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.btn,
       background: "none",
-      border: `2px solid ${C.pri}`,
-      color: C.pri
+      border: `2px solid ${C.brd}`,
+      color: C.t1
     },
-    onClick: dlCSV
-  }, "📊 Descargar Excel (CSV)"), /*#__PURE__*/React.createElement("div", {
+    onClick: dlRaw
+  }, "📋 CSV simple"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.t3,
       textAlign: "center",
       marginTop: 12
     }
-  }, "El PDF se abre para imprimir — elige \"Guardar como PDF\"")));
+  }, "Excel: tabla formateada · CSV: datos crudos")));
 }
 
 /* ── AI Chat Modal ── */

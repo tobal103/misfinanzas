@@ -28,7 +28,7 @@ input,select,textarea,button{font-family:inherit}
   useEffect,
   useRef
 } = React;
-const C = {
+var CL = {
   bg: "#F0F2F5",
   card: "#FFF",
   pri: "#0A2540",
@@ -41,8 +41,29 @@ const C = {
   t2: "#5A6978",
   t3: "#94A3B8",
   brd: "#E2E8F0",
-  inp: "#F8FAFC"
+  inp: "#F7F9FA"
 };
+var CD = {
+  bg: "#0F172A",
+  card: "#1E293B",
+  pri: "#0F172A",
+  acc: "#00D9A0",
+  accL: "#0A3D2E",
+  dan: "#F87171",
+  danL: "#3D1515",
+  warn: "#FBBF24",
+  t1: "#F1F5F9",
+  t2: "#94A3B8",
+  t3: "#64748B",
+  brd: "#334155",
+  inp: "#0F172A"
+};
+var C = CL;
+function applyTheme(dark) {
+  var src = dark ? CD : CL;
+  for (var k in src) C[k] = src[k];
+}
+C = Object.assign({}, CL);
 const fmt = n => "$" + Math.round(n || 0).toLocaleString("es-CL");
 const fP = n => !n || isNaN(n) ? "0.0%" : (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
 const fD = d => {
@@ -2408,6 +2429,12 @@ function ImportModal({
   }, "← Reintentar"))));
 }
 function SettingsModal({
+  dark,
+  setDark,
+  live,
+  setLive,
+  notif,
+  setNotif,
   onClose,
   gKey,
   setGKey,
@@ -2479,7 +2506,81 @@ function SettingsModal({
       marginTop: 12
     },
     onClick: save
-  }, saved ? "✅" : "Guardar"))));
+  }, saved ? "✅" : "Guardar")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: "1px solid " + C.brd,
+      paddingTop: 16,
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 600,
+      marginBottom: 12
+    }
+  }, "⚙️ Preferencias"), [["🌙 Modo oscuro", dark, function (v) {
+    setDark(v);
+    sto.set("dark", v);
+  }], ["📈 Precios en vivo (acciones)", live, function (v) {
+    setLive(v);
+    sto.set("live", v);
+  }], ["🔔 Recordatorio mensual", notif, function (v) {
+    setNotif(v);
+    sto.set("notif", v);
+    if (v && "Notification" in window) Notification.requestPermission();
+  }]].map(function (t) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: t[0],
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "10px 0",
+        borderBottom: "1px solid " + C.brd
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 14
+      }
+    }, t[0]), /*#__PURE__*/React.createElement("button", {
+      onClick: function () {
+        t[2](!t[1]);
+      },
+      style: {
+        width: 48,
+        height: 26,
+        borderRadius: 13,
+        border: "none",
+        background: t[1] ? C.acc : C.brd,
+        cursor: "pointer",
+        position: "relative",
+        transition: "all .2s"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        background: "#fff",
+        position: "absolute",
+        top: 3,
+        left: t[1] ? 25 : 3,
+        transition: "all .2s"
+      }
+    })));
+  }), live && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginTop: 8
+    }
+  }, "Los precios de acciones (USD) se actualizan al abrir la app"), notif && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginTop: 8
+    }
+  }, "Recibirás un recordatorio el día 1 de cada mes"))));
 }
 function RiskBreakdown({
   label,
@@ -6151,6 +6252,9 @@ function App() {
   const [showAdd, setShowAdd] = useState(false);
   const [pdfHTML, setPdfHTML] = useState("");
   const [summary, setSummary] = useState("");
+  const [dark, setDark] = useState(sto.get("dark") || false);
+  const [live, setLive] = useState(sto.get("live") || false);
+  const [notif, setNotif] = useState(sto.get("notif") || false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showImp, setShowImp] = useState(false);
@@ -6179,11 +6283,83 @@ function App() {
     UF: 38000
   });
   useEffect(function () {
+    if (!live || !user) return;
+    var tickers = [];
+    inv.forEach(function (i) {
+      if (i.currency === "USD" && i.category === "Acciones") {
+        var t = (i.name.match(/^([A-Z]{1,5})/) || [])[1];
+        if (t) tickers.push({
+          id: i.id,
+          t: t
+        });
+      }
+    });
+    if (!tickers.length) return;
+    tickers.forEach(function (tk) {
+      fetch("https://api.frankfurter.app/latest").then(function () {}).catch(function () {});
+    });
+  }, [live, user]);
+  useEffect(function () {
+    applyTheme(dark);
+    document.body.style.background = C.bg;
+    document.body.style.color = C.t1;
+  }, [dark]);
+  useEffect(function () {
     if (user && sto.get("_show_tutorial")) {
       sto.del("_show_tutorial");
       setShowTutorial(true);
     }
   }, [user]);
+  useEffect(function () {
+    if (!user || !inv.length) return;
+    var today = new Date();
+    var day = today.getDate();
+    var monthKey = today.getFullYear() + "-" + today.getMonth();
+    var changed = false;
+    var newInv = inv.map(function (i) {
+      var au = sto.get("auto:" + i.id);
+      if (!au || !au.amount) return i;
+      var lastRun = sto.get("autoRun:" + i.id) || "";
+      if (lastRun === monthKey || day < (au.day || 1)) return i;
+      sto.set("autoRun:" + i.id, monthKey);
+      changed = true;
+      var movs = [].concat(i.movements || []);
+      movs.push({
+        date: today.toISOString(),
+        type: "deposit",
+        amount: au.amount,
+        note: "Aporte automático"
+      });
+      return Object.assign({}, i, {
+        movements: movs,
+        amount: (i.amount || 0) + au.amount
+      });
+    });
+    if (changed) {
+      setInv(newInv);
+      sto.set("inv:" + user.email, newInv);
+      flash("Aportes automáticos registrados ✓");
+    }
+  }, [user]);
+  useEffect(function () {
+    if (!notif || !user) return;
+    var today = new Date();
+    var lastNotif = sto.get("lastNotif") || "";
+    var thisMonth = today.getFullYear() + "-" + today.getMonth();
+    if (today.getDate() <= 3 && lastNotif !== thisMonth) {
+      sto.set("lastNotif", thisMonth);
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification("MisFinanzas", {
+            body: "Es momento de actualizar los valores de tus inversiones 📊"
+          });
+        } catch (e) {}
+      }
+      setTimeout(function () {
+        flash("📊 Recuerda actualizar tus inversiones este mes");
+      }, 1500);
+    }
+  }, [notif, user]);
   useEffect(() => {
     if (!sto.get("_preloaded_v1")) {
       try {
@@ -6343,12 +6519,26 @@ function App() {
       position: "sticky",
       top: 0,
       background: "#0A2540",
-      padding: "12px 20px",
+      padding: "12px 16px",
       display: "flex",
-      gap: 10,
+      gap: 8,
       zIndex: 10
     }
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setPdfHTML("");
+    },
+    style: {
+      padding: "12px 16px",
+      background: "rgba(255,255,255,0.15)",
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "← Volver"), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       window.print();
     },
@@ -6363,21 +6553,7 @@ function App() {
       fontWeight: 600,
       cursor: "pointer"
     }
-  }, "Guardar PDF"), /*#__PURE__*/React.createElement("button", {
-    onClick: function () {
-      setPdfHTML("");
-    },
-    style: {
-      padding: "12px 20px",
-      background: "#EF4444",
-      color: "#fff",
-      border: "none",
-      borderRadius: 10,
-      fontSize: 14,
-      fontWeight: 600,
-      cursor: "pointer"
-    }
-  }, "Cerrar")), /*#__PURE__*/React.createElement("div", {
+  }, "📄 Guardar / Imprimir")), /*#__PURE__*/React.createElement("div", {
     dangerouslySetInnerHTML: {
       __html: pdfHTML
     }
@@ -7350,7 +7526,66 @@ function App() {
       fontWeight: 600,
       marginBottom: 8
     }
-  }, "⚠️ Concentración"), function () {
+  }, "⚠️ Alertas"), function () {
+    var alerts = [];
+    ["familiar", "individual"].forEach(function (tp) {
+      var items = inv.filter(function (i) {
+        return i.type === tp;
+      });
+      var tot = items.reduce(function (s, i) {
+        return s + toCLP(i.amount || 0, i.currency, rates);
+      }, 0);
+      if (tot === 0) return;
+      var br = {
+        bajo: 0,
+        medio: 0,
+        alto: 0
+      };
+      items.forEach(function (i) {
+        br[i.risk || "medio"] += toCLP(i.amount || 0, i.currency, rates);
+      });
+      var tgt = riskTarget[tp];
+      ["bajo", "medio", "alto"].forEach(function (r) {
+        var pct = Math.round(br[r] / tot * 100);
+        var diff = pct - tgt[r];
+        if (Math.abs(diff) > 10) alerts.push({
+          t: tp,
+          r: r,
+          pct: pct,
+          tgt: tgt[r],
+          diff: diff
+        });
+      });
+    });
+    if (!alerts.length) return /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.acc,
+        marginBottom: 8
+      }
+    }, "✓ Tu distribución está alineada con tus objetivos");
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 8
+      }
+    }, alerts.map(function (a, i) {
+      return /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          fontSize: 12,
+          color: C.dan,
+          marginBottom: 4
+        }
+      }, "⚠ ", a.t === "familiar" ? "Familiar" : "Individual", " riesgo ", rl[a.r], ": ", a.pct, "% (objetivo ", a.tgt, "%) — ", a.diff > 0 ? "reducir" : "aumentar", " ", Math.abs(a.diff), "%");
+    }));
+  }(), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      marginBottom: 6,
+      marginTop: 8
+    }
+  }, "Concentración"), function () {
     var byPlat = {};
     inv.forEach(function (i) {
       var p = i.platform || "Otro";
@@ -7778,12 +8013,26 @@ function App() {
       position: "sticky",
       top: 0,
       background: "#0A2540",
-      padding: "12px 20px",
+      padding: "12px 16px",
       display: "flex",
-      gap: 10,
+      gap: 8,
       zIndex: 10
     }
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setPdfHTML("");
+    },
+    style: {
+      padding: "12px 16px",
+      background: "rgba(255,255,255,0.15)",
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "← Volver"), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       window.print();
     },
@@ -7798,21 +8047,7 @@ function App() {
       fontWeight: 600,
       cursor: "pointer"
     }
-  }, "Guardar PDF"), /*#__PURE__*/React.createElement("button", {
-    onClick: function () {
-      setPdfHTML("");
-    },
-    style: {
-      padding: "12px 20px",
-      background: "#EF4444",
-      color: "#fff",
-      border: "none",
-      borderRadius: 10,
-      fontSize: 14,
-      fontWeight: 600,
-      cursor: "pointer"
-    }
-  }, "Cerrar")), /*#__PURE__*/React.createElement("div", {
+  }, "📄 Guardar / Imprimir")), /*#__PURE__*/React.createElement("div", {
     dangerouslySetInnerHTML: {
       __html: pdfHTML
     }
@@ -7857,7 +8092,13 @@ function App() {
     onClose: () => setShowSet(false),
     gKey: gKey,
     setGKey: setGKey,
-    ue: user.email
+    ue: user.email,
+    dark: dark,
+    setDark: setDark,
+    live: live,
+    setLive: setLive,
+    notif: notif,
+    setNotif: setNotif
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
@@ -7973,20 +8214,7 @@ function ExportModal({
     x += "<tr><td>Familiar</td><td class='n'>" + Math.round(fT) + "</td><td class='n'>" + (tV > 0 ? (fT / tV * 100).toFixed(1) : "0") + "%</td></tr>";
     x += "<tr><td>Individual</td><td class='n'>" + Math.round(iT) + "</td><td class='n'>" + (tV > 0 ? (iT / tV * 100).toFixed(1) : "0") + "%</td></tr></table>";
     x += "</body></html>";
-    var blob = new Blob([x], {
-      type: "application/vnd.ms-excel"
-    });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "MisFinanzas_" + new Date().toISOString().split("T")[0] + ".xls";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      onClose();
-    }, 300);
+    setPdfHTML(x);
   };
   const dlRaw = () => {
     var sep = ";";
@@ -7998,20 +8226,7 @@ function ExportModal({
       c += i.name + sep + i.platform + sep + i.type + sep + (i.category || "") + sep + (i.risk || "medio") + sep + (i.currency || "CLP") + sep + (i.amount || 0) + sep + d3 + sep + g + sep + r4 + "\r\n";
     });
     c += "TOTAL" + sep + sep + sep + sep + sep + "CLP" + sep + Math.round(tV) + sep + Math.round(tC) + sep + Math.round(tV - tC) + sep + (tC > 0 ? ((tV - tC) / tC * 100).toFixed(1) : "0") + "\r\n";
-    var b = new Blob(["\uFEFF" + c], {
-      type: "text/csv;charset=utf-8"
-    });
-    var u = URL.createObjectURL(b);
-    var a = document.createElement("a");
-    a.href = u;
-    a.download = "MisFinanzas_" + new Date().toISOString().split("T")[0] + ".csv";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(u);
-      onClose();
-    }, 300);
+    setPdfHTML("<div style='padding:16px;font-family:monospace;font-size:11px;white-space:pre-wrap;word-break:break-all'><h3 style='font-family:sans-serif'>CSV — selecciona y copia</h3>" + c.replace(/</g, "&lt;") + "</div>");
   };
   const dlPDF = () => {
     var d2 = new Date().toLocaleDateString("es-CL", {
@@ -8102,7 +8317,7 @@ function ExportModal({
       marginBottom: 10
     },
     onClick: dlCSV
-  }, "📊 Planilla Excel (.xls)"), /*#__PURE__*/React.createElement("button", {
+  }, "📊 Ver Planilla"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.btn,
       background: "none",
@@ -8110,14 +8325,14 @@ function ExportModal({
       color: C.t1
     },
     onClick: dlRaw
-  }, "📋 CSV simple"), /*#__PURE__*/React.createElement("div", {
+  }, "📋 Ver CSV"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.t3,
       textAlign: "center",
       marginTop: 12
     }
-  }, "Excel: tabla formateada · CSV: datos crudos")));
+  }, "Se abre dentro de la app · Usa \"Guardar / Imprimir\" para exportar")));
 }
 
 /* ── AI Chat Modal ── */

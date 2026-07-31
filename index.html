@@ -589,151 +589,683 @@ function Login({
           created: new Date().toISOString()
         }]);
         sto.set("adv:demo@demo.com", "Distribucion sugerida para 5.000.000 familiar:\n\nBajo: $1.250.000 (25%) - Deposito a plazo o renta fija\nMedio: $2.250.000 (45%) - Fondo balanceado\nAlto: $1.500.000 (30%) - MSCI World o S&P 500\n\nEsto mantiene tu perfil de riesgo objetivo.");
-        sto.set("budget:demo@demo.com", 1200000);
+        sto.set("budget:demo@demo.com:familiar", 1000000);
+        sto.set("budget:demo@demo.com:personal", 150000);
         sto.set("exp:demo@demo.com", [{
           id: "e01",
-          name: "Supermercado Jumbo",
-          amount: 89500,
-          cat: "Alimentación",
+          name: "Arriendo",
+          amount: 550000,
+          cat: "Arriendo/Vivienda",
           cur: "CLP",
-          date: "2026-07-28",
-          clp: 89500
+          date: "2026-01-01",
+          tipo: "familiar",
+          clp: 550000
         }, {
           id: "e02",
-          name: "Uber",
-          amount: 4800,
-          cat: "Transporte",
-          cur: "CLP",
-          date: "2026-07-27",
-          clp: 4800
-        }, {
-          id: "e03",
-          name: "Netflix",
-          amount: 12990,
-          cat: "Entretenimiento",
-          cur: "CLP",
-          date: "2026-07-25",
-          clp: 12990
-        }, {
-          id: "e04",
-          name: "Farmacia",
-          amount: 15600,
-          cat: "Salud",
-          cur: "CLP",
-          date: "2026-07-24",
-          clp: 15600
-        }, {
-          id: "e05",
-          name: "Bencina",
-          amount: 45000,
-          cat: "Transporte",
-          cur: "CLP",
-          date: "2026-07-22",
-          clp: 45000
-        }, {
-          id: "e06",
-          name: "Almuerzo",
-          amount: 18500,
+          name: "Supermercado Lider",
+          amount: 92000,
           cat: "Alimentación",
           cur: "CLP",
-          date: "2026-07-20",
-          clp: 18500
+          date: "2026-01-05",
+          tipo: "familiar",
+          clp: 92000
         }, {
-          id: "e07",
+          id: "e03",
+          name: "Supermercado Jumbo",
+          amount: 78000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-01-18",
+          tipo: "familiar",
+          clp: 78000
+        }, {
+          id: "e04",
+          name: "Internet",
+          amount: 29990,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-01-06",
+          tipo: "familiar",
+          clp: 29990
+        }, {
+          id: "e05",
           name: "Cuenta luz",
           amount: 38000,
           cat: "Servicios",
           cur: "CLP",
-          date: "2026-07-15",
+          date: "2026-01-15",
+          tipo: "familiar",
           clp: 38000
+        }, {
+          id: "e06",
+          name: "Bencina",
+          amount: 44000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-01-22",
+          tipo: "familiar",
+          clp: 44000
+        }, {
+          id: "e07",
+          name: "Netflix",
+          amount: 12990,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-01-25",
+          tipo: "familiar",
+          clp: 12990
         }, {
           id: "e08",
           name: "Spotify",
           amount: 8.99,
           cat: "Entretenimiento",
           cur: "USD",
-          date: "2026-07-10",
+          date: "2026-01-10",
+          tipo: "personal",
           clp: 8506
         }, {
           id: "e09",
-          name: "Supermercado Lider",
-          amount: 72000,
-          cat: "Alimentación",
-          cur: "CLP",
-          date: "2026-07-05",
-          clp: 72000
-        }, {
-          id: "e10",
-          name: "Arriendo",
-          amount: 550000,
-          cat: "Arriendo/Vivienda",
-          cur: "CLP",
-          date: "2026-07-01",
-          clp: 550000
-        }, {
-          id: "e11",
-          name: "Supermercado",
-          amount: 95000,
-          cat: "Alimentación",
-          cur: "CLP",
-          date: "2026-06-28",
-          clp: 95000
-        }, {
-          id: "e12",
-          name: "Bencina",
-          amount: 42000,
+          name: "Uber",
+          amount: 4800,
           cat: "Transporte",
           cur: "CLP",
-          date: "2026-06-20",
-          clp: 42000
+          date: "2026-01-27",
+          tipo: "personal",
+          clp: 4800
         }, {
-          id: "e13",
-          name: "Seguro auto",
-          amount: 85000,
-          cat: "Seguros",
+          id: "e10",
+          name: "Matrícula colegio",
+          amount: 180000,
+          cat: "Educación",
           cur: "CLP",
-          date: "2026-06-15",
-          clp: 85000
+          date: "2026-01-12",
+          tipo: "familiar",
+          clp: 180000
         }, {
-          id: "e14",
+          id: "e11",
+          name: "Vacaciones hotel",
+          amount: 240000,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-01-08",
+          tipo: "familiar",
+          clp: 240000
+        }, {
+          id: "e12",
           name: "Arriendo",
           amount: 550000,
           cat: "Arriendo/Vivienda",
           cur: "CLP",
-          date: "2026-06-01",
+          date: "2026-02-01",
+          tipo: "familiar",
           clp: 550000
+        }, {
+          id: "e13",
+          name: "Supermercado Lider",
+          amount: 88000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-02-05",
+          tipo: "familiar",
+          clp: 88000
+        }, {
+          id: "e14",
+          name: "Supermercado Jumbo",
+          amount: 71000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-02-18",
+          tipo: "familiar",
+          clp: 71000
         }, {
           id: "e15",
           name: "Internet",
           amount: 29990,
           cat: "Servicios",
           cur: "CLP",
-          date: "2026-06-05",
+          date: "2026-02-06",
+          tipo: "familiar",
           clp: 29990
         }, {
           id: "e16",
-          name: "Cena restaurant",
-          amount: 35000,
-          cat: "Alimentación",
+          name: "Cuenta luz",
+          amount: 38000,
+          cat: "Servicios",
           cur: "CLP",
-          date: "2026-05-25",
-          clp: 35000
+          date: "2026-02-15",
+          tipo: "familiar",
+          clp: 38000
         }, {
           id: "e17",
+          name: "Bencina",
+          amount: 41000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-02-22",
+          tipo: "familiar",
+          clp: 41000
+        }, {
+          id: "e18",
+          name: "Netflix",
+          amount: 12990,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-02-25",
+          tipo: "familiar",
+          clp: 12990
+        }, {
+          id: "e19",
+          name: "Spotify",
+          amount: 8.99,
+          cat: "Entretenimiento",
+          cur: "USD",
+          date: "2026-02-10",
+          tipo: "personal",
+          clp: 8506
+        }, {
+          id: "e20",
+          name: "Uber",
+          amount: 4800,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-02-27",
+          tipo: "personal",
+          clp: 4800
+        }, {
+          id: "e21",
+          name: "Útiles escolares",
+          amount: 95000,
+          cat: "Educación",
+          cur: "CLP",
+          date: "2026-02-20",
+          tipo: "familiar",
+          clp: 95000
+        }, {
+          id: "e22",
+          name: "Arriendo",
+          amount: 550000,
+          cat: "Arriendo/Vivienda",
+          cur: "CLP",
+          date: "2026-03-01",
+          tipo: "familiar",
+          clp: 550000
+        }, {
+          id: "e23",
+          name: "Supermercado Lider",
+          amount: 95000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-03-05",
+          tipo: "familiar",
+          clp: 95000
+        }, {
+          id: "e24",
+          name: "Supermercado Jumbo",
+          amount: 82000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-03-18",
+          tipo: "familiar",
+          clp: 82000
+        }, {
+          id: "e25",
+          name: "Internet",
+          amount: 29990,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-03-06",
+          tipo: "familiar",
+          clp: 29990
+        }, {
+          id: "e26",
+          name: "Cuenta luz",
+          amount: 38000,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-03-15",
+          tipo: "familiar",
+          clp: 38000
+        }, {
+          id: "e27",
+          name: "Bencina",
+          amount: 46000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-03-22",
+          tipo: "familiar",
+          clp: 46000
+        }, {
+          id: "e28",
+          name: "Netflix",
+          amount: 12990,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-03-25",
+          tipo: "familiar",
+          clp: 12990
+        }, {
+          id: "e29",
+          name: "Spotify",
+          amount: 8.99,
+          cat: "Entretenimiento",
+          cur: "USD",
+          date: "2026-03-10",
+          tipo: "personal",
+          clp: 8506
+        }, {
+          id: "e30",
+          name: "Uber",
+          amount: 4800,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-03-27",
+          tipo: "personal",
+          clp: 4800
+        }, {
+          id: "e31",
+          name: "Seguro auto",
+          amount: 85000,
+          cat: "Seguros",
+          cur: "CLP",
+          date: "2026-03-15",
+          tipo: "familiar",
+          clp: 85000
+        }, {
+          id: "e32",
+          name: "Ropa",
+          amount: 62000,
+          cat: "Ropa",
+          cur: "CLP",
+          date: "2026-03-22",
+          tipo: "personal",
+          clp: 62000
+        }, {
+          id: "e33",
+          name: "Arriendo",
+          amount: 550000,
+          cat: "Arriendo/Vivienda",
+          cur: "CLP",
+          date: "2026-04-01",
+          tipo: "familiar",
+          clp: 550000
+        }, {
+          id: "e34",
+          name: "Supermercado Lider",
+          amount: 86000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-04-05",
+          tipo: "familiar",
+          clp: 86000
+        }, {
+          id: "e35",
+          name: "Supermercado Jumbo",
+          amount: 74000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-04-18",
+          tipo: "familiar",
+          clp: 74000
+        }, {
+          id: "e36",
+          name: "Internet",
+          amount: 29990,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-04-06",
+          tipo: "familiar",
+          clp: 29990
+        }, {
+          id: "e37",
+          name: "Cuenta luz",
+          amount: 38000,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-04-15",
+          tipo: "familiar",
+          clp: 38000
+        }, {
+          id: "e38",
+          name: "Bencina",
+          amount: 43000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-04-22",
+          tipo: "familiar",
+          clp: 43000
+        }, {
+          id: "e39",
+          name: "Netflix",
+          amount: 12990,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-04-25",
+          tipo: "familiar",
+          clp: 12990
+        }, {
+          id: "e40",
+          name: "Spotify",
+          amount: 8.99,
+          cat: "Entretenimiento",
+          cur: "USD",
+          date: "2026-04-10",
+          tipo: "personal",
+          clp: 8506
+        }, {
+          id: "e41",
+          name: "Uber",
+          amount: 4800,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-04-27",
+          tipo: "personal",
+          clp: 4800
+        }, {
+          id: "e42",
+          name: "Dentista",
+          amount: 95000,
+          cat: "Salud",
+          cur: "CLP",
+          date: "2026-04-18",
+          tipo: "personal",
+          clp: 95000
+        }, {
+          id: "e43",
           name: "Arriendo",
           amount: 550000,
           cat: "Arriendo/Vivienda",
           cur: "CLP",
           date: "2026-05-01",
+          tipo: "familiar",
           clp: 550000
         }, {
-          id: "e18",
+          id: "e44",
+          name: "Supermercado Lider",
+          amount: 91000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-05-05",
+          tipo: "familiar",
+          clp: 91000
+        }, {
+          id: "e45",
+          name: "Supermercado Jumbo",
+          amount: 79000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-05-18",
+          tipo: "familiar",
+          clp: 79000
+        }, {
+          id: "e46",
+          name: "Internet",
+          amount: 29990,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-05-06",
+          tipo: "familiar",
+          clp: 29990
+        }, {
+          id: "e47",
+          name: "Cuenta luz",
+          amount: 38000,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-05-15",
+          tipo: "familiar",
+          clp: 38000
+        }, {
+          id: "e48",
+          name: "Bencina",
+          amount: 45000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-05-22",
+          tipo: "familiar",
+          clp: 45000
+        }, {
+          id: "e49",
+          name: "Netflix",
+          amount: 12990,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-05-25",
+          tipo: "familiar",
+          clp: 12990
+        }, {
+          id: "e50",
+          name: "Spotify",
+          amount: 8.99,
+          cat: "Entretenimiento",
+          cur: "USD",
+          date: "2026-05-10",
+          tipo: "personal",
+          clp: 8506
+        }, {
+          id: "e51",
+          name: "Uber",
+          amount: 4800,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-05-27",
+          tipo: "personal",
+          clp: 4800
+        }, {
+          id: "e52",
+          name: "Cena restaurant",
+          amount: 35000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-05-25",
+          tipo: "personal",
+          clp: 35000
+        }, {
+          id: "e53",
           name: "Dentista",
           amount: 120000,
           cat: "Salud",
           cur: "CLP",
           date: "2026-05-12",
+          tipo: "personal",
           clp: 120000
+        }, {
+          id: "e54",
+          name: "Arriendo",
+          amount: 550000,
+          cat: "Arriendo/Vivienda",
+          cur: "CLP",
+          date: "2026-06-01",
+          tipo: "familiar",
+          clp: 550000
+        }, {
+          id: "e55",
+          name: "Supermercado Lider",
+          amount: 95000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-06-05",
+          tipo: "familiar",
+          clp: 95000
+        }, {
+          id: "e56",
+          name: "Supermercado Jumbo",
+          amount: 76000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-06-18",
+          tipo: "familiar",
+          clp: 76000
+        }, {
+          id: "e57",
+          name: "Internet",
+          amount: 29990,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-06-06",
+          tipo: "familiar",
+          clp: 29990
+        }, {
+          id: "e58",
+          name: "Cuenta luz",
+          amount: 38000,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-06-15",
+          tipo: "familiar",
+          clp: 38000
+        }, {
+          id: "e59",
+          name: "Bencina",
+          amount: 42000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-06-22",
+          tipo: "familiar",
+          clp: 42000
+        }, {
+          id: "e60",
+          name: "Netflix",
+          amount: 12990,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-06-25",
+          tipo: "familiar",
+          clp: 12990
+        }, {
+          id: "e61",
+          name: "Spotify",
+          amount: 8.99,
+          cat: "Entretenimiento",
+          cur: "USD",
+          date: "2026-06-10",
+          tipo: "personal",
+          clp: 8506
+        }, {
+          id: "e62",
+          name: "Uber",
+          amount: 4800,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-06-27",
+          tipo: "personal",
+          clp: 4800
+        }, {
+          id: "e63",
+          name: "Seguro auto",
+          amount: 85000,
+          cat: "Seguros",
+          cur: "CLP",
+          date: "2026-06-15",
+          tipo: "familiar",
+          clp: 85000
+        }, {
+          id: "e64",
+          name: "Zapatillas",
+          amount: 68000,
+          cat: "Ropa",
+          cur: "CLP",
+          date: "2026-06-19",
+          tipo: "personal",
+          clp: 68000
+        }, {
+          id: "e65",
+          name: "Arriendo",
+          amount: 550000,
+          cat: "Arriendo/Vivienda",
+          cur: "CLP",
+          date: "2026-07-01",
+          tipo: "familiar",
+          clp: 550000
+        }, {
+          id: "e66",
+          name: "Supermercado Lider",
+          amount: 89500,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-07-05",
+          tipo: "familiar",
+          clp: 89500
+        }, {
+          id: "e67",
+          name: "Supermercado Jumbo",
+          amount: 72000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-07-18",
+          tipo: "familiar",
+          clp: 72000
+        }, {
+          id: "e68",
+          name: "Internet",
+          amount: 29990,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-07-06",
+          tipo: "familiar",
+          clp: 29990
+        }, {
+          id: "e69",
+          name: "Cuenta luz",
+          amount: 38000,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-07-15",
+          tipo: "familiar",
+          clp: 38000
+        }, {
+          id: "e70",
+          name: "Bencina",
+          amount: 45000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-07-22",
+          tipo: "familiar",
+          clp: 45000
+        }, {
+          id: "e71",
+          name: "Netflix",
+          amount: 12990,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-07-25",
+          tipo: "familiar",
+          clp: 12990
+        }, {
+          id: "e72",
+          name: "Spotify",
+          amount: 8.99,
+          cat: "Entretenimiento",
+          cur: "USD",
+          date: "2026-07-10",
+          tipo: "personal",
+          clp: 8506
+        }, {
+          id: "e73",
+          name: "Uber",
+          amount: 4800,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-07-27",
+          tipo: "personal",
+          clp: 4800
+        }, {
+          id: "e74",
+          name: "Farmacia",
+          amount: 15600,
+          cat: "Salud",
+          cur: "CLP",
+          date: "2026-07-24",
+          tipo: "personal",
+          clp: 15600
+        }, {
+          id: "e75",
+          name: "Almuerzo trabajo",
+          amount: 18500,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-07-20",
+          tipo: "personal",
+          clp: 18500
         }]);
         onLogin(du, true);
         return;
@@ -3487,10 +4019,12 @@ function createDemoData() {
     });
   });
   var hist2 = [];
-  [180, 150, 120, 90, 60, 30, 14, 7, 0].forEach(function (days) {
+  var base = 31000000;
+  var pts = [[365, base], [300, base * 1.02], [240, base * 1.01], [180, base * 1.05], [150, base * 1.07], [120, base * 1.06], [90, base * 1.10], [60, base * 1.13], [30, base * 1.12], [14, base * 1.15], [0, base * 1.17]];
+  pts.forEach(function (p) {
     hist2.push({
-      d: ds(days),
-      t: 15000000 + Math.round(Math.random() * 3000000) + days * 20000
+      d: ds(p[0]),
+      t: Math.round(p[1])
     });
   });
   hist2.sort(function (a, b) {
@@ -3508,76 +4042,89 @@ function Tutorial({
   var [step, setStep] = useState(0);
   var steps = [{
     tab: "home",
-    pos: "bottom",
+    pos: "center",
     title: "👋 Bienvenido a MisFinanzas",
-    desc: "Esta es tu pantalla principal. Acá ves tu patrimonio total, la distribución familiar/individual y tus inversiones recientes.",
-    highlight: "top"
+    desc: "Te muestro las 8 secciones de la app en 1 minuto.\n\nToca Siguiente para empezar."
+  }, {
+    tab: "home",
+    pos: "bottom",
+    title: "🏠 Inicio",
+    desc: "Tu patrimonio total, dividido en familiar e individual. Abajo ves el gráfico de evolución, tu retorno anualizado y una comparación contra el mercado."
   }, {
     tab: "home",
     pos: "top",
     title: "➕ Agregar e Importar",
-    desc: "Con estos botones agregas inversiones manualmente o importas desde una foto/texto. La IA lee tus cartolas automáticamente.",
-    highlight: "buttons"
+    desc: "Agrega inversiones a mano, o toca Importar para subir un screenshot de Fintual, Racional o Hapi — la IA lee los datos por ti."
   }, {
     tab: "portfolio",
     pos: "bottom",
-    title: "💼 Tu Portafolio",
-    desc: "Acá ves todas tus inversiones organizadas por plataforma. Filtra por Individual o Familiar. Toca cualquiera para ver su detalle.",
-    highlight: "full"
+    title: "💼 Portafolio",
+    desc: "Todas tus inversiones agrupadas por plataforma. Filtra por Individual o Familiar. Toca cualquiera para ver su gráfico, movimientos y editarla."
   }, {
-    tab: "portfolio",
+    tab: "expenses",
+    pos: "bottom",
+    title: "💳 Gastos",
+    desc: "Registra tus gastos del mes. Dos pestañas: Personal y Familiar. Ve el total por categoría con colores."
+  }, {
+    tab: "expenses",
     pos: "top",
-    title: "📈 Detalle de Inversión",
-    desc: "Al tocar una inversión ves: gráfico de evolución, ganancia, retorno, y puedes registrar depósitos, retiros o actualizar el valor.",
-    highlight: "full"
+    title: "📸 Escanea boletas",
+    desc: "Toca 📸 y sube una foto de boleta o el PDF de tu tarjeta. La IA extrae cada gasto y lo puedes corregir antes de guardar."
+  }, {
+    tab: "expenses",
+    pos: "top",
+    title: "🎯 Presupuesto",
+    desc: "Define cuánto quieres gastar al mes. La barra se pone amarilla al 80% y roja si te pasas. Te dice cuánto te queda."
   }, {
     tab: "realestate",
     pos: "bottom",
     title: "🏠 Inmobiliario",
-    desc: "Sección dedicada a propiedades. Registra tu depto, el pie, cuotas en UF, arriendo. Calcula si el arriendo cubre el dividendo y proyecta la rentabilidad total.",
-    highlight: "full"
+    desc: "Registra tu depto: pie, cuota en UF, arriendo. Calcula si el arriendo cubre el dividendo y proyecta tu rentabilidad final. Las cuotas se actualizan solas cada mes."
   }, {
     tab: "market",
     pos: "bottom",
-    title: "📊 Mercado en Vivo",
-    desc: "Dólar, UF, euro, cobre, Bitcoin, TPM — actualizados cada 5 minutos desde el Banco Central. Con Gemini activado ves noticias financieras 3 veces al día.",
-    highlight: "full"
+    title: "📊 Mercado",
+    desc: "Dólar, euro, UF, cobre, Bitcoin y TPM actualizados cada 5 minutos desde el Banco Central. Con Gemini activo también ves noticias 3 veces al día."
   }, {
     tab: "plan",
     pos: "bottom",
-    title: "💰 Planificación",
-    desc: "Ingresa cuánto quieres invertir y la IA te recomienda cómo distribuirlo. También puedes crear metas de ahorro con calculadora de cuánto ahorrar al mes.",
-    highlight: "full"
+    title: "💰 Planificar",
+    desc: "Ingresa cuánto quieres invertir y la IA te dice cómo repartirlo. Abajo: proyección de tu patrimonio a 5, 10, 15 y 20 años."
+  }, {
+    tab: "plan",
+    pos: "top",
+    title: "🎯 Metas",
+    desc: "Agrega metas como viaje, auto o casa. Te calcula el ahorro mensual y la IA te recomienda dónde invertirlo. Cada meta tiene su chat."
   }, {
     tab: "analysis",
     pos: "bottom",
     title: "📈 Análisis",
-    desc: "Distribución por riesgo (familiar/individual/total), categorías, y comparación contra tus objetivos. Si ves ✓ vas bien, si ves ⚠ hay que ajustar.",
-    highlight: "full"
+    desc: "Distribución por riesgo comparada con tu objetivo. Alertas si te desviaste más de 10%. También revisa tu concentración por plataforma."
   }, {
     tab: "profile",
     pos: "bottom",
-    title: "👤 Perfil y Ajustes",
-    desc: "Edita tu nombre y contraseña. Configura tus objetivos de riesgo con los sliders. Y en ⚙️ Ajustes activa Gemini (gratis) para potenciar la IA.",
-    highlight: "full"
+    title: "👤 Perfil",
+    desc: "Edita tu nombre y contraseña. Define tus objetivos de riesgo con los sliders. Exporta un backup de todos tus datos."
   }, {
     tab: "profile",
     pos: "center",
-    title: "📱 Instalar como App",
-    desc: "En Safari: toca Compartir (↑) → 'Agregar a pantalla de inicio'. Queda como app con ícono 💼 a pantalla completa.",
-    highlight: "none"
+    title: "🤖 Activa la IA (gratis)",
+    desc: "1. Entra a aistudio.google.com\n2. Inicia sesión con Gmail\n3. Get API Key → Create\n4. Pega la key en ⚙️ Ajustes\n\nDesbloquea: escaneo de boletas, importar por foto, chat y noticias."
   }, {
     tab: "profile",
     pos: "center",
-    title: "🤖 Activar IA Gemini",
-    desc: "1. Ve a aistudio.google.com\n2. Login con Gmail\n3. Get API Key → Create\n4. Pega en ⚙️ Ajustes\n\n¡Es gratis y desbloquea importación por foto, chat IA y noticias!",
-    highlight: "none"
+    title: "⚙️ Ajustes",
+    desc: "En Ajustes puedes activar:\n\n🌙 Modo oscuro\n🔔 Recordatorio mensual\n📈 Precios en vivo"
+  }, {
+    tab: "profile",
+    pos: "center",
+    title: "📱 Instala la app",
+    desc: "En Safari: toca Compartir (↑) → Agregar a pantalla de inicio.\n\nQueda como app real con ícono 💼, a pantalla completa."
   }, {
     tab: "home",
     pos: "center",
     title: "✅ ¡Listo!",
-    desc: "Ya conoces MisFinanzas. Empieza agregando tu primera inversión o importa un screenshot de tu app favorita.",
-    highlight: "none"
+    desc: "Ya conoces todo. Empieza agregando una inversión o escaneando tu primera boleta.\n\nPuedes volver a ver este tutorial desde Perfil."
   }];
   var s = steps[step];
   useEffect(function () {
@@ -3593,12 +4140,12 @@ function Tutorial({
     background: "#fff",
     borderRadius: 20,
     padding: "20px 20px 16px",
-    boxShadow: "0 12px 40px rgba(0,0,0,0.3)"
+    boxShadow: "0 12px 40px rgba(0,0,0,0.35)"
   };
   if (s.pos === "bottom") Object.assign(tipStyle, {
-    bottom: 100
+    bottom: 96
   });else if (s.pos === "top") Object.assign(tipStyle, {
-    top: 80
+    top: 76
   });else Object.assign(tipStyle, {
     top: "50%",
     transform: "translateY(-50%)"
@@ -3619,7 +4166,7 @@ function Tutorial({
       left: 0,
       right: 0,
       bottom: 0,
-      background: "rgba(0,0,0,0.5)"
+      background: "rgba(0,0,0,0.55)"
     },
     onClick: function () {
       if (step < steps.length - 1) setStep(step + 1);else onClose();
@@ -3627,6 +4174,13 @@ function Tutorial({
   }), /*#__PURE__*/React.createElement("div", {
     style: tipStyle
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#94A3B8",
+      fontWeight: 600,
+      marginBottom: 4
+    }
+  }, "PASO ", step + 1, " DE ", steps.length), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 18,
       fontWeight: 700,
@@ -3644,16 +4198,17 @@ function Tutorial({
     style: {
       display: "flex",
       justifyContent: "center",
-      gap: 5,
-      margin: "14px 0 10px"
+      gap: 4,
+      margin: "14px 0 10px",
+      flexWrap: "wrap"
     }
   }, steps.map(function (_, i) {
     return React.createElement("div", {
       key: i,
       style: {
-        width: i === step ? 18 : 7,
-        height: 7,
-        borderRadius: 4,
+        width: i === step ? 16 : 6,
+        height: 6,
+        borderRadius: 3,
         background: i === step ? "#00A67E" : "#E2E8F0",
         transition: "all .2s"
       }
@@ -6405,12 +6960,15 @@ function Gastos({
   var [scanBusy, setScanBusy] = useState(false);
   var [newCat, setNewCat] = useState("");
   var [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  var [view, setView] = useState("month");
+  var [gTipo, setGTipo] = useState("personal");
   var [f, setF] = useState({
     name: "",
     amount: "",
     cat: defCats[0],
     cur: "CLP",
-    date: new Date().toISOString().split("T")[0]
+    date: new Date().toISOString().split("T")[0],
+    tipo: "personal"
   });
   var sf = function (k, v) {
     setF(function (p) {
@@ -6424,6 +6982,9 @@ function Gastos({
     setExps(sto.get(expKey) || []);
     setCats(sto.get(catKey) || defCats);
   }, [userEmail]);
+  useEffect(function () {
+    setBudget(sto.get("budget:" + (userEmail || "x") + ":" + gTipo) || 0);
+  }, [userEmail, gTipo]);
   var save = function (e2) {
     setExps(e2);
     sto.set(expKey, e2);
@@ -6448,6 +7009,7 @@ function Gastos({
       cat: f.cat,
       cur: f.cur,
       date: f.date,
+      tipo: f.tipo || gTipo,
       clp: Math.round(toCLP2(parseFloat(f.amount) || 0, f.cur))
     };
     save([ne].concat(exps));
@@ -6457,7 +7019,8 @@ function Gastos({
       amount: "",
       cat: cats[0] || "Otros",
       cur: "CLP",
-      date: new Date().toISOString().split("T")[0]
+      date: new Date().toISOString().split("T")[0],
+      tipo: gTipo
     });
   };
   var delExp = function (id) {
@@ -6515,6 +7078,7 @@ function Gastos({
               cat: "Otros",
               cur: p.currency || "CLP",
               date: new Date().toISOString().split("T")[0],
+              tipo: gTipo,
               clp: Math.round(toCLP2(parseFloat(p.amount) || 0, p.currency || "CLP"))
             };
           });
@@ -6537,7 +7101,7 @@ function Gastos({
     }
   };
   var filtered = exps.filter(function (e2) {
-    return (e2.date || "").slice(0, 7) === month;
+    return (e2.tipo || "personal") === gTipo && (e2.date || "").slice(0, 7) === month;
   });
   var totalMonth = filtered.reduce(function (s, e2) {
     return s + (e2.clp || toCLP2(e2.amount, e2.cur));
@@ -6547,9 +7111,8 @@ function Gastos({
     byCat[e2.cat || "Otros"] = (byCat[e2.cat || "Otros"] || 0) + (e2.clp || toCLP2(e2.amount, e2.cur));
   });
   var catColors = ["#3B82F6", "#EF4444", "#F59E0B", "#10B981", "#8B5CF6", "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16"];
-  var budgetKey = "budget:" + (userEmail || "x");
-  var [budget, setBudget] = useState(sto.get(budgetKey) || 0);
-  var [view, setView] = useState("month");
+  var budgetKey = "budget:" + (userEmail || "x") + ":" + gTipo;
+  var [budget, setBudget] = useState(0);
   var [showBudget, setShowBudget] = useState(false);
   var saveBudget = function (v) {
     var b = parseFloat(v) || 0;
@@ -6558,7 +7121,7 @@ function Gastos({
   };
   var year = month.slice(0, 4);
   var yearExps = exps.filter(function (e2) {
-    return (e2.date || "").slice(0, 4) === year;
+    return (e2.tipo || "personal") === gTipo && (e2.date || "").slice(0, 4) === year;
   });
   var totalYear = yearExps.reduce(function (s, e2) {
     return s + (e2.clp || toCLP2(e2.amount, e2.cur));
@@ -6640,20 +7203,44 @@ function Gastos({
       gap: 6,
       marginTop: 8
     }
+  }, ["personal", "familiar"].map(function (tp) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: tp,
+      onClick: function () {
+        setGTipo(tp);
+      },
+      style: {
+        flex: 1,
+        padding: "8px",
+        border: "none",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: "pointer",
+        background: gTipo === tp ? tp === "familiar" ? "#7C3AED" : "#2563EB" : "transparent",
+        color: gTipo === tp ? "#fff" : C.t2
+      }
+    }, tp === "personal" ? "👤 Personal" : "👨‍👩‍👧 Familiar");
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginTop: 6
+    }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       setView("month");
     },
     style: {
       flex: 1,
-      padding: "6px",
+      padding: "5px",
       border: "none",
-      borderRadius: 8,
-      fontSize: 12,
+      borderRadius: 6,
+      fontSize: 11,
       fontWeight: 600,
       cursor: "pointer",
-      background: view === "month" ? C.acc : "transparent",
-      color: view === "month" ? "#fff" : C.t2
+      background: view === "month" ? C.inp : "transparent",
+      color: view === "month" ? C.t1 : C.t3
     }
   }, "Mes"), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
@@ -6661,14 +7248,14 @@ function Gastos({
     },
     style: {
       flex: 1,
-      padding: "6px",
+      padding: "5px",
       border: "none",
-      borderRadius: 8,
-      fontSize: 12,
+      borderRadius: 6,
+      fontSize: 11,
       fontWeight: 600,
       cursor: "pointer",
-      background: view === "year" ? C.acc : "transparent",
-      color: view === "year" ? "#fff" : C.t2
+      background: view === "year" ? C.inp : "transparent",
+      color: view === "year" ? C.t1 : C.t3
     }
   }, "Año")), view === "month" && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7045,9 +7632,15 @@ function Gastos({
     style: {
       fontSize: 18,
       fontWeight: 700,
+      marginBottom: 4
+    }
+  }, "🎯 Presupuesto Mensual"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.t2,
       marginBottom: 12
     }
-  }, "🎯 Presupuesto Mensual"), /*#__PURE__*/React.createElement(NumInput, {
+  }, gTipo === "familiar" ? "👨‍👩‍👧 Familiar" : "👤 Personal"), /*#__PURE__*/React.createElement(NumInput, {
     value: String(budget || ""),
     onChange: function (v) {
       saveBudget(v);
@@ -7142,6 +7735,30 @@ function Gastos({
       sf("cur", e2.target.value);
     }
   }, /*#__PURE__*/React.createElement("option", null, "CLP"), /*#__PURE__*/React.createElement("option", null, "USD"), /*#__PURE__*/React.createElement("option", null, "EUR"), /*#__PURE__*/React.createElement("option", null, "UF")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginBottom: 10
+    }
+  }, ["personal", "familiar"].map(function (tp) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: tp,
+      onClick: function () {
+        sf("tipo", tp);
+      },
+      style: {
+        flex: 1,
+        padding: "8px",
+        border: "2px solid " + (f.tipo === tp ? tp === "familiar" ? "#7C3AED" : "#2563EB" : C.brd),
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: 600,
+        cursor: "pointer",
+        background: f.tipo === tp ? tp === "familiar" ? "#EDE9FE" : "#DBEAFE" : "transparent",
+        color: f.tipo === tp ? tp === "familiar" ? "#7C3AED" : "#2563EB" : C.t2
+      }
+    }, tp === "personal" ? "👤 Personal" : "👨‍👩‍👧 Familiar");
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,

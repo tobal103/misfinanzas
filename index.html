@@ -589,6 +589,152 @@ function Login({
           created: new Date().toISOString()
         }]);
         sto.set("adv:demo@demo.com", "Distribucion sugerida para 5.000.000 familiar:\n\nBajo: $1.250.000 (25%) - Deposito a plazo o renta fija\nMedio: $2.250.000 (45%) - Fondo balanceado\nAlto: $1.500.000 (30%) - MSCI World o S&P 500\n\nEsto mantiene tu perfil de riesgo objetivo.");
+        sto.set("budget:demo@demo.com", 1200000);
+        sto.set("exp:demo@demo.com", [{
+          id: "e01",
+          name: "Supermercado Jumbo",
+          amount: 89500,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-07-28",
+          clp: 89500
+        }, {
+          id: "e02",
+          name: "Uber",
+          amount: 4800,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-07-27",
+          clp: 4800
+        }, {
+          id: "e03",
+          name: "Netflix",
+          amount: 12990,
+          cat: "Entretenimiento",
+          cur: "CLP",
+          date: "2026-07-25",
+          clp: 12990
+        }, {
+          id: "e04",
+          name: "Farmacia",
+          amount: 15600,
+          cat: "Salud",
+          cur: "CLP",
+          date: "2026-07-24",
+          clp: 15600
+        }, {
+          id: "e05",
+          name: "Bencina",
+          amount: 45000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-07-22",
+          clp: 45000
+        }, {
+          id: "e06",
+          name: "Almuerzo",
+          amount: 18500,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-07-20",
+          clp: 18500
+        }, {
+          id: "e07",
+          name: "Cuenta luz",
+          amount: 38000,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-07-15",
+          clp: 38000
+        }, {
+          id: "e08",
+          name: "Spotify",
+          amount: 8.99,
+          cat: "Entretenimiento",
+          cur: "USD",
+          date: "2026-07-10",
+          clp: 8506
+        }, {
+          id: "e09",
+          name: "Supermercado Lider",
+          amount: 72000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-07-05",
+          clp: 72000
+        }, {
+          id: "e10",
+          name: "Arriendo",
+          amount: 550000,
+          cat: "Arriendo/Vivienda",
+          cur: "CLP",
+          date: "2026-07-01",
+          clp: 550000
+        }, {
+          id: "e11",
+          name: "Supermercado",
+          amount: 95000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-06-28",
+          clp: 95000
+        }, {
+          id: "e12",
+          name: "Bencina",
+          amount: 42000,
+          cat: "Transporte",
+          cur: "CLP",
+          date: "2026-06-20",
+          clp: 42000
+        }, {
+          id: "e13",
+          name: "Seguro auto",
+          amount: 85000,
+          cat: "Seguros",
+          cur: "CLP",
+          date: "2026-06-15",
+          clp: 85000
+        }, {
+          id: "e14",
+          name: "Arriendo",
+          amount: 550000,
+          cat: "Arriendo/Vivienda",
+          cur: "CLP",
+          date: "2026-06-01",
+          clp: 550000
+        }, {
+          id: "e15",
+          name: "Internet",
+          amount: 29990,
+          cat: "Servicios",
+          cur: "CLP",
+          date: "2026-06-05",
+          clp: 29990
+        }, {
+          id: "e16",
+          name: "Cena restaurant",
+          amount: 35000,
+          cat: "Alimentación",
+          cur: "CLP",
+          date: "2026-05-25",
+          clp: 35000
+        }, {
+          id: "e17",
+          name: "Arriendo",
+          amount: 550000,
+          cat: "Arriendo/Vivienda",
+          cur: "CLP",
+          date: "2026-05-01",
+          clp: 550000
+        }, {
+          id: "e18",
+          name: "Dentista",
+          amount: 120000,
+          cat: "Salud",
+          cur: "CLP",
+          date: "2026-05-12",
+          clp: 120000
+        }]);
         onLogin(du, true);
         return;
       }
@@ -6242,6 +6388,1178 @@ function Inmobiliario({
     }
   }, "🏠 Agregar"))));
 }
+function Gastos({
+  rates,
+  gKey,
+  userEmail
+}) {
+  var expKey = "exp:" + (userEmail || "x");
+  var catKey = "expCat:" + (userEmail || "x");
+  var defCats = ["Alimentación", "Transporte", "Arriendo/Vivienda", "Servicios", "Salud", "Educación", "Entretenimiento", "Ropa", "Seguros", "Otros"];
+  var [exps, setExps] = useState(sto.get(expKey) || []);
+  var [cats, setCats] = useState(sto.get(catKey) || defCats);
+  var [showAdd, setShowAdd] = useState(false);
+  var [showScan, setShowScan] = useState(false);
+  var [editExp, setEditExp] = useState(null);
+  var [scanRes, setScanRes] = useState(null);
+  var [scanBusy, setScanBusy] = useState(false);
+  var [newCat, setNewCat] = useState("");
+  var [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  var [f, setF] = useState({
+    name: "",
+    amount: "",
+    cat: defCats[0],
+    cur: "CLP",
+    date: new Date().toISOString().split("T")[0]
+  });
+  var sf = function (k, v) {
+    setF(function (p) {
+      var n = {};
+      for (var x in p) n[x] = p[x];
+      n[k] = v;
+      return n;
+    });
+  };
+  useEffect(function () {
+    setExps(sto.get(expKey) || []);
+    setCats(sto.get(catKey) || defCats);
+  }, [userEmail]);
+  var save = function (e2) {
+    setExps(e2);
+    sto.set(expKey, e2);
+  };
+  var saveCats = function (c2) {
+    setCats(c2);
+    sto.set(catKey, c2);
+  };
+  var toCLP2 = function (amt, cur) {
+    if (!cur || cur === "CLP") return amt;
+    if (cur === "USD") return amt * (rates.USD || 950);
+    if (cur === "EUR") return amt * (rates.EUR || 1050);
+    if (cur === "UF") return amt * (rates.UF || 40000);
+    return amt;
+  };
+  var addExp = function () {
+    if (!f.name || !f.amount) return;
+    var ne = {
+      id: Date.now().toString(),
+      name: f.name,
+      amount: parseFloat(f.amount) || 0,
+      cat: f.cat,
+      cur: f.cur,
+      date: f.date,
+      clp: Math.round(toCLP2(parseFloat(f.amount) || 0, f.cur))
+    };
+    save([ne].concat(exps));
+    setShowAdd(false);
+    setF({
+      name: "",
+      amount: "",
+      cat: cats[0] || "Otros",
+      cur: "CLP",
+      date: new Date().toISOString().split("T")[0]
+    });
+  };
+  var delExp = function (id) {
+    save(exps.filter(function (e2) {
+      return e2.id !== id;
+    }));
+  };
+  var saveEdit = function () {
+    if (!editExp) return;
+    var updated = exps.map(function (e2) {
+      return e2.id === editExp.id ? Object.assign({}, editExp, {
+        clp: Math.round(toCLP2(editExp.amount, editExp.cur))
+      }) : e2;
+    });
+    save(updated);
+    setEditExp(null);
+  };
+  var doScan = function (file) {
+    if (!gKey || !file) return;
+    setScanBusy(true);
+    setScanRes(null);
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var b64 = ev.target.result.split(",")[1];
+      fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=" + gKey, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": gKey
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              inlineData: {
+                mimeType: file.type,
+                data: b64
+              }
+            }, {
+              text: "Lee esta boleta, factura o estado de cuenta. Extrae cada gasto/item. Para cada uno: nombre corto, monto (numero), moneda (CLP si tiene $ y puntos de miles, USD si dice USD, UF si dice UF). Responde SOLO JSON array: [{name:'',amount:0,currency:'CLP'}]. Sin datos: []"
+            }]
+          }]
+        })
+      }).then(function (r) {
+        return r.json();
+      }).then(function (d) {
+        var txt = d && d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts && d.candidates[0].content.parts[0] && d.candidates[0].content.parts[0].text || "[]";
+        txt = txt.replace(/```json|```/g, "").trim();
+        try {
+          var parsed = JSON.parse(txt);
+          var items = parsed.map(function (p) {
+            return {
+              id: Date.now() + "-" + Math.random().toString(36).slice(2),
+              name: p.name || "",
+              amount: parseFloat(p.amount) || 0,
+              cat: "Otros",
+              cur: p.currency || "CLP",
+              date: new Date().toISOString().split("T")[0],
+              clp: Math.round(toCLP2(parseFloat(p.amount) || 0, p.currency || "CLP"))
+            };
+          });
+          setScanRes(items);
+        } catch (e3) {
+          setScanRes([]);
+        }
+        setScanBusy(false);
+      }).catch(function () {
+        setScanBusy(false);
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+  var importScan = function () {
+    if (scanRes && scanRes.length) {
+      save(scanRes.concat(exps));
+      setScanRes(null);
+      setShowScan(false);
+    }
+  };
+  var filtered = exps.filter(function (e2) {
+    return (e2.date || "").slice(0, 7) === month;
+  });
+  var totalMonth = filtered.reduce(function (s, e2) {
+    return s + (e2.clp || toCLP2(e2.amount, e2.cur));
+  }, 0);
+  var byCat = {};
+  filtered.forEach(function (e2) {
+    byCat[e2.cat || "Otros"] = (byCat[e2.cat || "Otros"] || 0) + (e2.clp || toCLP2(e2.amount, e2.cur));
+  });
+  var catColors = ["#3B82F6", "#EF4444", "#F59E0B", "#10B981", "#8B5CF6", "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16"];
+  var budgetKey = "budget:" + (userEmail || "x");
+  var [budget, setBudget] = useState(sto.get(budgetKey) || 0);
+  var [view, setView] = useState("month");
+  var [showBudget, setShowBudget] = useState(false);
+  var saveBudget = function (v) {
+    var b = parseFloat(v) || 0;
+    setBudget(b);
+    sto.set(budgetKey, b);
+  };
+  var year = month.slice(0, 4);
+  var yearExps = exps.filter(function (e2) {
+    return (e2.date || "").slice(0, 4) === year;
+  });
+  var totalYear = yearExps.reduce(function (s, e2) {
+    return s + (e2.clp || toCLP2(e2.amount, e2.cur));
+  }, 0);
+  var avgMonth = totalYear / (new Date().getMonth() + 1);
+  var pctBudget = budget > 0 ? totalMonth / budget * 100 : 0;
+  var remaining = budget > 0 ? budget - totalMonth : 0;
+  var monthlyData = {};
+  yearExps.forEach(function (e2) {
+    var m2 = (e2.date || "").slice(0, 7);
+    monthlyData[m2] = (monthlyData[m2] || 0) + (e2.clp || toCLP2(e2.amount, e2.cur));
+  });
+  var months12 = [];
+  for (var mi = 0; mi < 12; mi++) {
+    var mk = year + "-" + (mi < 9 ? "0" : "") + (mi + 1);
+    months12.push({
+      m: mk,
+      t: monthlyData[mk] || 0,
+      label: new Date(mk + "-01").toLocaleDateString("es-CL", {
+        month: "short"
+      })
+    });
+  }
+  var displayExps = view === "year" ? yearExps : filtered;
+  var displayTotal = view === "year" ? totalYear : totalMonth;
+  var displayByCat = {};
+  displayExps.forEach(function (e2) {
+    displayByCat[e2.cat || "Otros"] = (displayByCat[e2.cat || "Otros"] || 0) + (e2.clp || toCLP2(e2.amount, e2.cur));
+  });
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "calc(24px + var(--st)) 20px 8px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 700
+    }
+  }, "💳 Gastos"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowScan(true);
+    },
+    style: {
+      background: C.inp,
+      border: "none",
+      borderRadius: 8,
+      padding: "6px 10px",
+      fontSize: 12,
+      cursor: "pointer"
+    }
+  }, "📸"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowAdd(true);
+    },
+    style: {
+      background: C.acc,
+      color: "#fff",
+      border: "none",
+      borderRadius: 8,
+      padding: "6px 12px",
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "+"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setView("month");
+    },
+    style: {
+      flex: 1,
+      padding: "6px",
+      border: "none",
+      borderRadius: 8,
+      fontSize: 12,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: view === "month" ? C.acc : "transparent",
+      color: view === "month" ? "#fff" : C.t2
+    }
+  }, "Mes"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setView("year");
+    },
+    style: {
+      flex: 1,
+      padding: "6px",
+      border: "none",
+      borderRadius: 8,
+      fontSize: 12,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: view === "year" ? C.acc : "transparent",
+      color: view === "year" ? "#fff" : C.t2
+    }
+  }, "Año")), view === "month" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 8,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      var d2 = new Date(month + "-01");
+      d2.setMonth(d2.getMonth() - 1);
+      setMonth(d2.toISOString().slice(0, 7));
+    },
+    style: {
+      background: "none",
+      border: "none",
+      fontSize: 18,
+      cursor: "pointer",
+      color: C.t1
+    }
+  }, "◀"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      textAlign: "center",
+      fontSize: 15,
+      fontWeight: 600
+    }
+  }, new Date(month + "-01").toLocaleDateString("es-CL", {
+    month: "long",
+    year: "numeric"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      var d2 = new Date(month + "-01");
+      d2.setMonth(d2.getMonth() + 1);
+      setMonth(d2.toISOString().slice(0, 7));
+    },
+    style: {
+      background: "none",
+      border: "none",
+      fontSize: 18,
+      cursor: "pointer",
+      color: C.t1
+    }
+  }, "▶")), view === "year" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginTop: 8,
+      fontSize: 15,
+      fontWeight: 600
+    }
+  }, year)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "8px 20px 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.card,
+      background: C.pri,
+      padding: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "rgba(255,255,255,0.5)",
+      textTransform: "uppercase"
+    }
+  }, view === "year" ? "Total anual" : "Total del mes"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 26,
+      fontWeight: 700,
+      color: "#fff"
+    }
+  }, fmt(displayTotal)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "rgba(255,255,255,0.5)"
+    }
+  }, displayExps.length, " gastos")), view === "month" && budget > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "rgba(255,255,255,0.5)"
+    }
+  }, "Presupuesto"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 700,
+      color: pctBudget > 100 ? "#F87171" : pctBudget > 80 ? "#FBBF24" : "#4ADE80"
+    }
+  }, fmt(budget)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: remaining >= 0 ? "#4ADE80" : "#F87171"
+    }
+  }, remaining >= 0 ? "Quedan " + fmt(remaining) : "Excedido " + fmt(Math.abs(remaining))))), view === "month" && budget > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 8,
+      background: "rgba(255,255,255,0.15)",
+      borderRadius: 4,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 8,
+      borderRadius: 4,
+      background: pctBudget > 100 ? "#F87171" : pctBudget > 80 ? "#FBBF24" : "#4ADE80",
+      width: Math.min(pctBudget, 100) + "%",
+      transition: "width .3s"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "rgba(255,255,255,0.5)",
+      marginTop: 4,
+      textAlign: "right"
+    }
+  }, pctBudget.toFixed(0), "% usado")), view === "month" && /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowBudget(true);
+    },
+    style: {
+      marginTop: 8,
+      padding: "6px 12px",
+      background: "rgba(255,255,255,0.15)",
+      border: "none",
+      borderRadius: 8,
+      color: "#fff",
+      fontSize: 11,
+      cursor: "pointer"
+    }
+  }, budget > 0 ? "✏️ Editar presupuesto" : "🎯 Definir presupuesto")), view === "year" && /*#__PURE__*/React.createElement("div", {
+    style: S.card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, "Gasto mensual"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.t3
+    }
+  }, "Promedio: ", fmt(Math.round(avgMonth)), "/mes")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "flex-end",
+      height: 80,
+      gap: 3
+    }
+  }, months12.map(function (md) {
+    var mx = Math.max.apply(null, months12.map(function (x) {
+      return x.t;
+    })) || 1;
+    return /*#__PURE__*/React.createElement("div", {
+      key: md.m,
+      style: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: "100%",
+        background: md.m === month ? C.acc : C.brd,
+        borderRadius: 3,
+        height: Math.max(4, md.t / mx * 60) + "px",
+        marginBottom: 2,
+        cursor: "pointer"
+      },
+      onClick: function () {
+        setMonth(md.m);
+        setView("month");
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 8,
+        color: md.m === month ? C.acc : C.t3
+      }
+    }, md.label));
+  })), budget > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10,
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 12,
+      color: C.t2
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Presupuesto anual: ", fmt(budget * 12)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: totalYear > budget * 12 ? C.dan : C.acc
+    }
+  }, totalYear > budget * 12 ? "Excedido" : "Dentro del presupuesto"))), Object.keys(displayByCat).length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: S.card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      marginBottom: 8
+    }
+  }, "Categorías"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      height: 10,
+      borderRadius: 5,
+      overflow: "hidden",
+      marginBottom: 10
+    }
+  }, Object.entries(displayByCat).sort(function (a, b) {
+    return b[1] - a[1];
+  }).map(function (e2, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: e2[0],
+      style: {
+        width: e2[1] / displayTotal * 100 + "%",
+        background: catColors[i % catColors.length]
+      }
+    });
+  })), Object.entries(displayByCat).sort(function (a, b) {
+    return b[1] - a[1];
+  }).map(function (e2, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: e2[0],
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "6px 0",
+        borderBottom: "1px solid " + C.brd
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 10,
+        height: 10,
+        borderRadius: 3,
+        background: catColors[i % catColors.length]
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13
+      }
+    }, e2[0])), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "right"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600
+      }
+    }, fmt(Math.round(e2[1]))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3
+      }
+    }, (e2[1] / displayTotal * 100).toFixed(0), "%")));
+  })), displayExps.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "30px 20px",
+      color: C.t2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 36,
+      marginBottom: 8
+    }
+  }, "📝"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13
+    }
+  }, "Sin gastos ", view === "year" ? "este año" : "este mes")), displayExps.sort(function (a, b) {
+    return (b.date || "").localeCompare(a.date || "");
+  }).map(function (e2) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: e2.id,
+      style: {
+        ...S.card,
+        padding: 12,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: function () {
+        setEditExp({
+          ...e2
+        });
+      },
+      style: {
+        flex: 1,
+        cursor: "pointer"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 500
+      }
+    }, e2.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t3
+      }
+    }, e2.cat, " · ", new Date(e2.date).toLocaleDateString("es-CL", {
+      day: "numeric",
+      month: "short"
+    }), e2.cur !== "CLP" ? " · " + e2.cur : "")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "right",
+        display: "flex",
+        alignItems: "center",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 700,
+        color: C.dan
+      }
+    }, fmt(e2.clp || e2.amount)), e2.cur !== "CLP" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3
+      }
+    }, e2.cur, " ", e2.amount)), /*#__PURE__*/React.createElement("button", {
+      onClick: function () {
+        delExp(e2.id);
+      },
+      style: {
+        background: "none",
+        border: "none",
+        color: C.t3,
+        cursor: "pointer",
+        fontSize: 14
+      }
+    }, "✕")));
+  })), showBudget && /*#__PURE__*/React.createElement("div", {
+    style: S.modal,
+    onClick: function (e2) {
+      if (e2.target === e2.currentTarget) setShowBudget(false);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.sheet,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      marginBottom: 12
+    }
+  }, "🎯 Presupuesto Mensual"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(budget || ""),
+    onChange: function (v) {
+      saveBudget(v);
+    },
+    placeholder: "Ej: 1.500.000"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.t3,
+      marginTop: 8
+    }
+  }, budget > 0 ? "Anual: " + fmt(budget * 12) : ""), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowBudget(false);
+    },
+    style: {
+      ...S.btn,
+      background: C.acc,
+      color: "#fff",
+      marginTop: 12
+    }
+  }, "Listo"))), showAdd && /*#__PURE__*/React.createElement("div", {
+    style: S.modal,
+    onClick: function (e2) {
+      if (e2.target === e2.currentTarget) setShowAdd(false);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.sheet
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700
+    }
+  }, "+ Nuevo Gasto"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowAdd(false);
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement(Ic, {
+    name: "x"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Descripción"), /*#__PURE__*/React.createElement("input", {
+    style: S.input,
+    placeholder: "Supermercado, Uber, etc",
+    value: f.name,
+    onChange: function (e2) {
+      sf("name", e2.target.value);
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 2
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Monto"), /*#__PURE__*/React.createElement(NumInput, {
+    value: f.amount,
+    onChange: function (v) {
+      sf("amount", v);
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Moneda"), /*#__PURE__*/React.createElement("select", {
+    style: S.input,
+    value: f.cur,
+    onChange: function (e2) {
+      sf("cur", e2.target.value);
+    }
+  }, /*#__PURE__*/React.createElement("option", null, "CLP"), /*#__PURE__*/React.createElement("option", null, "USD"), /*#__PURE__*/React.createElement("option", null, "EUR"), /*#__PURE__*/React.createElement("option", null, "UF")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Categoría"), /*#__PURE__*/React.createElement("select", {
+    style: S.input,
+    value: f.cat,
+    onChange: function (e2) {
+      sf("cat", e2.target.value);
+    }
+  }, cats.map(function (c2) {
+    return /*#__PURE__*/React.createElement("option", {
+      key: c2
+    }, c2);
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Fecha"), /*#__PURE__*/React.createElement("input", {
+    style: S.input,
+    type: "date",
+    value: f.date,
+    onChange: function (e2) {
+      sf("date", e2.target.value);
+    }
+  }))), f.cur !== "CLP" && f.amount && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.t3,
+      marginBottom: 8
+    }
+  }, "= ", fmt(Math.round(toCLP2(parseFloat(f.amount) || 0, f.cur))), " CLP"), /*#__PURE__*/React.createElement("button", {
+    onClick: addExp,
+    style: {
+      ...S.btn,
+      background: C.acc,
+      color: "#fff"
+    }
+  }, "Agregar"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      borderTop: "1px solid " + C.brd,
+      paddingTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 600,
+      marginBottom: 6
+    }
+  }, "Categorías"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 4
+    }
+  }, cats.map(function (c2) {
+    return /*#__PURE__*/React.createElement("span", {
+      key: c2,
+      style: {
+        fontSize: 11,
+        background: C.inp,
+        padding: "3px 8px",
+        borderRadius: 6,
+        display: "flex",
+        alignItems: "center",
+        gap: 4
+      }
+    }, c2, /*#__PURE__*/React.createElement("button", {
+      onClick: function () {
+        saveCats(cats.filter(function (x) {
+          return x !== c2;
+        }));
+      },
+      style: {
+        background: "none",
+        border: "none",
+        color: C.t3,
+        cursor: "pointer",
+        fontSize: 10,
+        padding: 0
+      }
+    }, "✕"));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.input,
+      flex: 1,
+      padding: "6px 10px",
+      fontSize: 12
+    },
+    placeholder: "Nueva categoría",
+    value: newCat,
+    onChange: function (e2) {
+      setNewCat(e2.target.value);
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      if (newCat.trim()) {
+        saveCats([].concat(cats, [newCat.trim()]));
+        setNewCat("");
+      }
+    },
+    style: {
+      background: C.acc,
+      color: "#fff",
+      border: "none",
+      borderRadius: 8,
+      padding: "0 12px",
+      fontSize: 12,
+      cursor: "pointer"
+    }
+  }, "+"))))), editExp && /*#__PURE__*/React.createElement("div", {
+    style: S.modal,
+    onClick: function (e2) {
+      if (e2.target === e2.currentTarget) setEditExp(null);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.sheet
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700
+    }
+  }, "✏️ Editar"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setEditExp(null);
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement(Ic, {
+    name: "x"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Descripción"), /*#__PURE__*/React.createElement("input", {
+    style: S.input,
+    value: editExp.name,
+    onChange: function (e2) {
+      setEditExp({
+        ...editExp,
+        name: e2.target.value
+      });
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 2
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Monto"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editExp.amount),
+    onChange: function (v) {
+      setEditExp({
+        ...editExp,
+        amount: parseFloat(v) || 0
+      });
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Moneda"), /*#__PURE__*/React.createElement("select", {
+    style: S.input,
+    value: editExp.cur,
+    onChange: function (e2) {
+      setEditExp({
+        ...editExp,
+        cur: e2.target.value
+      });
+    }
+  }, /*#__PURE__*/React.createElement("option", null, "CLP"), /*#__PURE__*/React.createElement("option", null, "USD"), /*#__PURE__*/React.createElement("option", null, "EUR"), /*#__PURE__*/React.createElement("option", null, "UF")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Categoría"), /*#__PURE__*/React.createElement("select", {
+    style: S.input,
+    value: editExp.cat,
+    onChange: function (e2) {
+      setEditExp({
+        ...editExp,
+        cat: e2.target.value
+      });
+    }
+  }, cats.map(function (c2) {
+    return /*#__PURE__*/React.createElement("option", {
+      key: c2
+    }, c2);
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Fecha"), /*#__PURE__*/React.createElement("input", {
+    style: S.input,
+    type: "date",
+    value: editExp.date,
+    onChange: function (e2) {
+      setEditExp({
+        ...editExp,
+        date: e2.target.value
+      });
+    }
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: saveEdit,
+    style: {
+      ...S.btn,
+      background: C.acc,
+      color: "#fff"
+    }
+  }, "💾 Guardar"))), showScan && /*#__PURE__*/React.createElement("div", {
+    style: S.modal,
+    onClick: function (e2) {
+      if (e2.target === e2.currentTarget) setShowScan(false);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.sheet
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700
+    }
+  }, "📸 Escanear Gasto"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowScan(false);
+      setScanRes(null);
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement(Ic, {
+    name: "x"
+  }))), !gKey && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: 16,
+      color: C.t2,
+      fontSize: 13
+    }
+  }, "Activa Gemini en ⚙️ Ajustes para escanear boletas"), gKey && !scanRes && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      ...S.btn,
+      background: C.acc,
+      color: "#fff",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*,application/pdf",
+    style: {
+      display: "none"
+    },
+    onChange: function (e2) {
+      if (e2.target.files[0]) doScan(e2.target.files[0]);
+    }
+  }), "📸 Subir foto o PDF"), scanBusy && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: 20,
+      color: C.t3
+    }
+  }, "⏳ Analizando...")), scanRes && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.acc,
+      fontWeight: 600,
+      marginBottom: 8
+    }
+  }, "✅ ", scanRes.length, " gastos detectados"), scanRes.map(function (sr, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        ...S.card,
+        padding: 10,
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      style: {
+        ...S.input,
+        marginBottom: 4,
+        padding: "6px 10px",
+        fontSize: 13
+      },
+      value: sr.name,
+      onChange: function (e2) {
+        var n = [].concat(scanRes);
+        n[i] = {
+          ...sr,
+          name: e2.target.value
+        };
+        setScanRes(n);
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement(NumInput, {
+      value: String(sr.amount),
+      onChange: function (v) {
+        var n = [].concat(scanRes);
+        n[i] = {
+          ...sr,
+          amount: parseFloat(v) || 0,
+          clp: Math.round(toCLP2(parseFloat(v) || 0, sr.cur))
+        };
+        setScanRes(n);
+      },
+      style: {
+        flex: 2,
+        padding: "6px 10px",
+        fontSize: 13
+      }
+    }), /*#__PURE__*/React.createElement("select", {
+      style: {
+        ...S.input,
+        flex: 1,
+        padding: "6px",
+        fontSize: 12
+      },
+      value: sr.cur,
+      onChange: function (e2) {
+        var n = [].concat(scanRes);
+        n[i] = {
+          ...sr,
+          cur: e2.target.value,
+          clp: Math.round(toCLP2(sr.amount, e2.target.value))
+        };
+        setScanRes(n);
+      }
+    }, /*#__PURE__*/React.createElement("option", null, "CLP"), /*#__PURE__*/React.createElement("option", null, "USD"), /*#__PURE__*/React.createElement("option", null, "EUR"), /*#__PURE__*/React.createElement("option", null, "UF")), /*#__PURE__*/React.createElement("select", {
+      style: {
+        ...S.input,
+        flex: 1,
+        padding: "6px",
+        fontSize: 12
+      },
+      value: sr.cat,
+      onChange: function (e2) {
+        var n = [].concat(scanRes);
+        n[i] = {
+          ...sr,
+          cat: e2.target.value
+        };
+        setScanRes(n);
+      }
+    }, cats.map(function (c2) {
+      return /*#__PURE__*/React.createElement("option", {
+        key: c2
+      }, c2);
+    }))));
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: importScan,
+    style: {
+      ...S.btn,
+      background: C.acc,
+      color: "#fff",
+      marginTop: 6
+    }
+  }, "✅ Importar ", scanRes.length, " gastos")))));
+}
 
 /* ═══ MAIN ═══ */
 function App() {
@@ -7734,7 +9052,11 @@ function App() {
       minWidth: 70,
       textAlign: "right"
     }
-  }, fmt(val)))))))), tab === "realestate" && /*#__PURE__*/React.createElement(Inmobiliario, {
+  }, fmt(val)))))))), tab === "expenses" && /*#__PURE__*/React.createElement(Gastos, {
+    rates: rates,
+    gKey: gKey,
+    userEmail: user.email
+  }), tab === "realestate" && /*#__PURE__*/React.createElement(Inmobiliario, {
     rates: rates,
     userEmail: user.email
   }), tab === "market" && /*#__PURE__*/React.createElement(Mercado, {
@@ -8114,7 +9436,7 @@ function App() {
       padding: `8px 0 calc(16px + var(--sb))`,
       zIndex: 100
     }
-  }, [["home", "home", "Inicio"], ["portfolio", "briefcase", "Portafolio"], ["realestate", "home", "Inmob."], ["market", "chart", "Mercado"], ["plan", "doc", "Planificar"], ["analysis", "chart", "Análisis"], ["profile", "user", "Perfil"]].map(([k, ic, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["home", "home", "Inicio"], ["portfolio", "briefcase", "Portafolio"], ["expenses", "doc", "Gastos"], ["realestate", "home", "Inmob."], ["market", "chart", "Mercado"], ["plan", "doc", "Planif."], ["analysis", "chart", "Análisis"], ["profile", "user", "Perfil"]].map(([k, ic, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     onClick: () => setTab(k),
     style: {
@@ -8126,7 +9448,7 @@ function App() {
       padding: "4px 12px",
       border: "none",
       background: "none",
-      fontSize: 9,
+      fontSize: 8,
       fontWeight: tab === k ? 600 : 400,
       color: tab === k ? C.acc : C.t3
     }

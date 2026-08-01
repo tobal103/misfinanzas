@@ -6959,6 +6959,7 @@ function Gastos({
   var [scanRes, setScanRes] = useState(null);
   var [scanBusy, setScanBusy] = useState(false);
   var [scanErr, setScanErr] = useState("");
+  var [scanProg, setScanProg] = useState(null);
   var [note, setNote] = useState("");
   var [newCat, setNewCat] = useState("");
   var [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -7078,155 +7079,184 @@ function Gastos({
     var n = parseFloat(s);
     return isNaN(n) ? 0 : Math.abs(n);
   };
-  var doScan = function (file) {
+  var readB64 = function (file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onerror = function () {
+        reject(new Error("No se pudo leer " + file.name));
+      };
+      r.onload = function (ev) {
+        var res = String(ev.target.result || "");
+        var b64 = res.indexOf(",") > -1 ? res.split(",")[1] : "";
+        if (!b64) reject(new Error("Archivo vacio: " + file.name));else resolve({
+          b64: b64,
+          mime: file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : "image/jpeg"),
+          name: file.name
+        });
+      };
+      r.readAsDataURL(file);
+    });
+  };
+  var scanOne = function (fileData) {
+    var hoy = new Date().toISOString().split("T")[0];
+    var catList = cats.join(", ");
+    var prompt = "Analiza esta boleta, factura, comprobante o estado de cuenta y extrae CADA gasto por separado.\n\n" + "REGLAS DE MONTO (critico):\n" + "- En Chile el punto separa miles y la coma decimales. $89.500 son OCHENTA Y NUEVE MIL QUINIENTOS, no 89.5\n" + "- Devuelve amount como numero entero sin separadores. $89.500 => 89500\n" + "- Si es USD con decimales, usalos: US$8.99 => 8.99\n" + "- Ignora subtotales, IVA desglosado, propinas sugeridas y el TOTAL si ya listaste los items individuales.\n" + "- Si el documento solo muestra un total, devuelve ese unico gasto.\n\n" + "MONEDA: CLP por defecto. USD si dice USD/US$/dolares. UF si dice UF. EUR si dice EUR.\n" + "FECHA: usa la del documento en formato YYYY-MM-DD. Si no aparece, usa " + hoy + "\n" + "CATEGORIA: elige la que mejor calce de esta lista: " + catList + "\n" + "NOMBRE: descripcion corta, maximo 4 palabras.";
+    return fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=" + encodeURIComponent(gKey), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            inlineData: {
+              mimeType: fileData.mime,
+              data: fileData.b64
+            }
+          }, {
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                name: {
+                  type: "STRING"
+                },
+                amount: {
+                  type: "NUMBER"
+                },
+                currency: {
+                  type: "STRING"
+                },
+                date: {
+                  type: "STRING"
+                },
+                category: {
+                  type: "STRING"
+                }
+              },
+              required: ["name", "amount", "currency"]
+            }
+          }
+        }
+      })
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        return {
+          ok: r.ok,
+          status: r.status,
+          body: j
+        };
+      });
+    }).then(function (res2) {
+      if (!res2.ok) {
+        var msg = res2.body && res2.body.error && res2.body.error.message || "Error " + res2.status;
+        if (res2.status === 400 && /API key/i.test(msg)) msg = "La API key no es valida";else if (res2.status === 429) msg = "Limite de uso de Gemini alcanzado";else if (res2.status === 404) msg = "Modelo no disponible con tu key";
+        throw new Error(msg);
+      }
+      var cand = res2.body && res2.body.candidates && res2.body.candidates[0];
+      if (!cand) {
+        var fb = res2.body && res2.body.promptFeedback;
+        throw new Error(fb && fb.blockReason ? "Bloqueado (" + fb.blockReason + ")" : "Sin resultados");
+      }
+      if (cand.finishReason === "SAFETY") throw new Error("Bloqueado por seguridad");
+      var txt = cand.content && cand.content.parts && cand.content.parts[0] && cand.content.parts[0].text || "";
+      txt = txt.replace(/```json/gi, "").replace(/```/g, "").trim();
+      var parsed;
+      try {
+        parsed = JSON.parse(txt);
+      } catch (e3) {
+        var m2 = txt.match(/\[[\s\S]*\]/);
+        if (m2) {
+          try {
+            parsed = JSON.parse(m2[0]);
+          } catch (e4) {}
+        }
+      }
+      if (!parsed || !parsed.length) return [];
+      return parsed.map(function (p) {
+        var amt = parseAmt(p.amount);
+        var cur = String(p.currency || "CLP").toUpperCase().replace(/[^A-Z]/g, "");
+        if (cur === "US" || cur === "USDOLAR" || cur === "DOLAR") cur = "USD";
+        if (["CLP", "USD", "EUR", "UF"].indexOf(cur) === -1) cur = "CLP";
+        var dt = /^\d{4}-\d{2}-\d{2}$/.test(p.date || "") ? p.date : hoy;
+        var ct = cats.indexOf(p.category) > -1 ? p.category : "Otros";
+        return {
+          id: Date.now() + "-" + Math.random().toString(36).slice(2),
+          name: String(p.name || "Gasto").slice(0, 60),
+          amount: amt,
+          cat: ct,
+          cur: cur,
+          date: dt,
+          tipo: gTipo,
+          src: fileData.name,
+          clp: Math.round(toCLP2(amt, cur))
+        };
+      }).filter(function (x) {
+        return x.amount > 0;
+      });
+    });
+  };
+  var doScan = function (files) {
     if (!gKey) {
       setScanErr("Falta la API key de Gemini. Actívala en ⚙️ Ajustes.");
       return;
     }
-    if (!file) return;
-    if (file.size > 15 * 1024 * 1024) {
-      setScanErr("El archivo es muy grande (máx 15 MB). Usa una foto de menor resolución.");
+    var list = [].slice.call(files || []);
+    if (!list.length) return;
+    if (list.length > 10) {
+      setScanErr("Máximo 10 archivos a la vez.");
+      return;
+    }
+    var tooBig = list.filter(function (f2) {
+      return f2.size > 15 * 1024 * 1024;
+    });
+    if (tooBig.length) {
+      setScanErr("Archivo muy grande: " + tooBig[0].name + " (máx 15 MB c/u)");
       return;
     }
     setScanBusy(true);
     setScanRes(null);
     setScanErr("");
-    var reader = new FileReader();
-    reader.onerror = function () {
-      setScanBusy(false);
-      setScanErr("No se pudo leer el archivo.");
-    };
-    reader.onload = function (ev) {
-      var res = String(ev.target.result || "");
-      var b64 = res.indexOf(",") > -1 ? res.split(",")[1] : "";
-      if (!b64) {
+    setScanProg({
+      done: 0,
+      total: list.length
+    });
+    var all = [],
+      errors = [],
+      done = 0;
+    var runNext = function (idx) {
+      if (idx >= list.length) {
         setScanBusy(false);
-        setScanErr("Archivo vacío o ilegible.");
+        setScanProg(null);
+        if (!all.length) {
+          setScanErr(errors.length ? errors.join(" · ") : "No se detectaron gastos. Prueba con fotos mas nitidas.");
+          return;
+        }
+        if (errors.length) setScanErr(errors.length + " de " + list.length + " fallaron: " + errors.join(" · "));
+        setScanRes(all);
         return;
       }
-      var mime = file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : "image/jpeg");
-      var hoy = new Date().toISOString().split("T")[0];
-      var catList = cats.join(", ");
-      var prompt = "Analiza esta boleta, factura, comprobante o estado de cuenta de tarjeta y extrae CADA gasto por separado.\n\n" + "REGLAS DE MONTO (critico):\n" + "- En Chile el punto separa miles y la coma decimales. $89.500 son OCHENTA Y NUEVE MIL QUINIENTOS, no 89.5\n" + "- Devuelve amount como numero entero sin separadores. $89.500 => 89500\n" + "- Si es USD con decimales, usalos: US$8.99 => 8.99\n" + "- Ignora subtotales, IVA desglosado, propinas sugeridas y el TOTAL si ya listaste los items individuales.\n" + "- Si el documento solo muestra un total (ej: una boleta simple), devuelve ese unico gasto.\n\n" + "MONEDA: CLP por defecto. USD si dice USD/US$/dolares. UF si dice UF. EUR si dice EUR.\n" + "FECHA: usa la del documento en formato YYYY-MM-DD. Si no aparece, usa " + hoy + "\n" + "CATEGORIA: elige la que mejor calce de esta lista: " + catList + "\n" + "NOMBRE: descripcion corta, maximo 4 palabras.";
-      fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=" + encodeURIComponent(gKey), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              inlineData: {
-                mimeType: mime,
-                data: b64
-              }
-            }, {
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "ARRAY",
-              items: {
-                type: "OBJECT",
-                properties: {
-                  name: {
-                    type: "STRING"
-                  },
-                  amount: {
-                    type: "NUMBER"
-                  },
-                  currency: {
-                    type: "STRING"
-                  },
-                  date: {
-                    type: "STRING"
-                  },
-                  category: {
-                    type: "STRING"
-                  }
-                },
-                required: ["name", "amount", "currency"]
-              }
-            }
-          }
-        })
-      }).then(function (r) {
-        return r.json().then(function (j) {
-          return {
-            ok: r.ok,
-            status: r.status,
-            body: j
-          };
-        });
-      }).then(function (res2) {
-        setScanBusy(false);
-        if (!res2.ok) {
-          var msg = res2.body && res2.body.error && res2.body.error.message || "Error " + res2.status;
-          if (res2.status === 400 && /API key/i.test(msg)) msg = "La API key no es valida. Revisala en ⚙️ Ajustes.";else if (res2.status === 429) msg = "Alcanzaste el limite de uso de Gemini. Intenta en unos minutos.";else if (res2.status === 404) msg = "El modelo no esta disponible con tu key.";
-          setScanErr(msg);
-          return;
-        }
-        var cand = res2.body && res2.body.candidates && res2.body.candidates[0];
-        if (!cand) {
-          var fb = res2.body && res2.body.promptFeedback;
-          setScanErr(fb && fb.blockReason ? "Gemini bloqueo la imagen (" + fb.blockReason + ")" : "Gemini no devolvio resultados.");
-          return;
-        }
-        if (cand.finishReason === "SAFETY") {
-          setScanErr("Gemini bloqueo el contenido por seguridad.");
-          return;
-        }
-        var txt = cand.content && cand.content.parts && cand.content.parts[0] && cand.content.parts[0].text || "";
-        txt = txt.replace(/```json/gi, "").replace(/```/g, "").trim();
-        var parsed;
-        try {
-          parsed = JSON.parse(txt);
-        } catch (e3) {
-          var m2 = txt.match(/\[[\s\S]*\]/);
-          if (m2) {
-            try {
-              parsed = JSON.parse(m2[0]);
-            } catch (e4) {}
-          }
-        }
-        if (!parsed || !parsed.length) {
-          setScanErr(parsed ? "No se detectaron gastos. Prueba con una foto mas nitida o mejor iluminada." : "No se pudo leer la respuesta. Intenta de nuevo.");
-          return;
-        }
-        var items = parsed.map(function (p) {
-          var amt = parseAmt(p.amount);
-          var cur = String(p.currency || "CLP").toUpperCase().replace(/[^A-Z]/g, "");
-          if (cur === "US" || cur === "USDOLAR" || cur === "DOLAR") cur = "USD";
-          if (["CLP", "USD", "EUR", "UF"].indexOf(cur) === -1) cur = "CLP";
-          var dt = /^\d{4}-\d{2}-\d{2}$/.test(p.date || "") ? p.date : hoy;
-          var ct = cats.indexOf(p.category) > -1 ? p.category : "Otros";
-          return {
-            id: Date.now() + "-" + Math.random().toString(36).slice(2),
-            name: String(p.name || "Gasto").slice(0, 60),
-            amount: amt,
-            cat: ct,
-            cur: cur,
-            date: dt,
-            tipo: gTipo,
-            clp: Math.round(toCLP2(amt, cur))
-          };
-        }).filter(function (x) {
-          return x.amount > 0;
-        });
-        if (!items.length) {
-          setScanErr("Se detectaron items pero sin montos validos. Ingresalos manualmente.");
-          return;
-        }
-        setScanRes(items);
+      readB64(list[idx]).then(scanOne).then(function (items) {
+        all = all.concat(items);
       }).catch(function (err) {
-        setScanBusy(false);
-        setScanErr("Error de conexion. Revisa tu internet e intenta de nuevo.");
+        errors.push(list[idx].name + ": " + (err.message || "error"));
+      }).then(function () {
+        done++;
+        setScanProg({
+          done: done,
+          total: list.length
+        });
+        runNext(idx + 1);
       });
     };
-    reader.readAsDataURL(file);
+    runNext(0);
   };
   var importScan = function () {
     if (!scanRes || !scanRes.length) return;
@@ -8294,6 +8324,7 @@ function Gastos({
         setShowScan(false);
         setScanRes(null);
         setScanErr("");
+        setScanProg(null);
       }
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -8315,6 +8346,7 @@ function Gastos({
       setShowScan(false);
       setScanRes(null);
       setScanErr("");
+      setScanProg(null);
     },
     style: {
       background: "none",
@@ -8346,7 +8378,7 @@ function Gastos({
       marginBottom: 10,
       lineHeight: 1.5
     }
-  }, "Sube una foto de boleta, factura o el PDF de tu tarjeta. Se agregarán como ", /*#__PURE__*/React.createElement("b", null, gTipo === "familiar" ? "👨‍👩‍👧 Familiar" : "👤 Personal"), "."), /*#__PURE__*/React.createElement("label", {
+  }, "Sube ", /*#__PURE__*/React.createElement("b", null, "una o varias"), " fotos de boletas o PDFs (hasta 10). Se agregarán como ", /*#__PURE__*/React.createElement("b", null, gTipo === "familiar" ? "👨‍👩‍👧 Familiar" : "👤 Personal"), "."), /*#__PURE__*/React.createElement("label", {
     style: {
       ...S.btn,
       background: scanBusy ? C.brd : C.acc,
@@ -8360,16 +8392,44 @@ function Gastos({
   }, /*#__PURE__*/React.createElement("input", {
     type: "file",
     accept: "image/*,application/pdf",
+    multiple: true,
     disabled: scanBusy,
     style: {
       display: "none"
     },
     onChange: function (e2) {
-      var fl = e2.target.files && e2.target.files[0];
-      if (fl) doScan(fl);
+      var fl = e2.target.files;
+      if (fl && fl.length) doScan(fl);
       e2.target.value = "";
     }
-  }), scanBusy ? "⏳ Analizando..." : "📸 Elegir foto o PDF"), scanBusy && /*#__PURE__*/React.createElement("div", {
+  }), scanBusy ? "⏳ Analizando..." : "📸 Elegir fotos o PDFs"), scanBusy && scanProg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 11,
+      color: C.t2,
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Archivo ", Math.min(scanProg.done + 1, scanProg.total), " de ", scanProg.total), /*#__PURE__*/React.createElement("span", null, Math.round(scanProg.done / scanProg.total * 100), "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 6,
+      background: C.inp,
+      borderRadius: 3,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 6,
+      borderRadius: 3,
+      background: C.acc,
+      width: scanProg.done / scanProg.total * 100 + "%",
+      transition: "width .3s"
+    }
+  }))), scanBusy && !scanProg && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.t3,
@@ -8540,13 +8600,27 @@ function Gastos({
         });
         setScanRes(n);
       }
-    })), sr.cur !== "CLP" && /*#__PURE__*/React.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        marginTop: 4
+      }
+    }, sr.src ? /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.t3,
-        marginTop: 4
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        maxWidth: "60%"
       }
-    }, "= ", fmt(sr.clp), " CLP"));
+    }, "📄 ", sr.src) : /*#__PURE__*/React.createElement("span", null), sr.cur !== "CLP" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3
+      }
+    }, "= ", fmt(sr.clp), " CLP")));
   }), /*#__PURE__*/React.createElement("button", {
     onClick: importScan,
     style: {

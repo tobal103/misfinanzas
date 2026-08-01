@@ -6401,7 +6401,7 @@ function Inmobiliario({
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Tasa %"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "CAE %"), /*#__PURE__*/React.createElement(NumInput, {
     value: String(editProp.rate || ""),
     onChange: function (v) {
       setEditProp({
@@ -6456,7 +6456,7 @@ function Inmobiliario({
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Arriendo/mes"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "Arriendo"), /*#__PURE__*/React.createElement(NumInput, {
     value: String(editProp.arriendo || ""),
     onChange: function (v) {
       setEditProp({
@@ -6470,7 +6470,7 @@ function Inmobiliario({
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Meses gracia"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "Gracia"), /*#__PURE__*/React.createElement(NumInput, {
     value: String(editProp.grace || ""),
     onChange: function (v) {
       setEditProp({
@@ -6478,6 +6478,21 @@ function Inmobiliario({
         grace: parseInt(v) || 0
       });
     }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Corredor%"), /*#__PURE__*/React.createElement(NumInput, {
+    value: String(editProp.corredor || ""),
+    onChange: function (v) {
+      setEditProp({
+        ...editProp,
+        corredor: parseFloat(v) || 0
+      });
+    },
+    decimals: 1
   }))), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       var np = props.map(function (p) {

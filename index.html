@@ -288,6 +288,11 @@ function NumInput({
   });
 }
 function toCLP(amount, currency, rates) {
+  if (!rates) rates = {
+    USD: 950,
+    EUR: 1050,
+    UF: 40000
+  };
   if (!currency || currency === "CLP") return amount;
   if (currency === "USD") return amount * (rates.USD || 950);
   if (currency === "EUR") return amount * (rates.EUR || 1050);
@@ -3350,7 +3355,7 @@ function RiskBreakdown({
     }
   }, ["bajo", "medio", "alto"].map(function (r) {
     var pct = Math.round(rB[r] / rTot * 100);
-    var tgt = target ? target[r] : null;
+    var tgt = target && typeof target[r] === "number" ? target[r] : null;
     var ok = tgt !== null ? Math.abs(pct - tgt) <= 5 : true;
     return /*#__PURE__*/React.createElement("div", {
       key: r,
@@ -5814,7 +5819,7 @@ function Inmobiliario({
         color: C.t2,
         textTransform: "uppercase"
       }
-    }, "Cuotas"), /*#__PURE__*/React.createElement("div", {
+    }, "Cuotas (", Math.round(dp.totalCuotas / 12), " años)"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 16,
         fontWeight: 700
@@ -6815,7 +6820,7 @@ function Inmobiliario({
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Tasa anual %"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "CAE %"), /*#__PURE__*/React.createElement(NumInput, {
     value: f.rate,
     onChange: function (v) {
       s("rate", v);
@@ -6834,7 +6839,20 @@ function Inmobiliario({
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Total cuotas"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "Años"), /*#__PURE__*/React.createElement(NumInput, {
+    value: f.plazoAnos || "",
+    onChange: function (v) {
+      s("plazoAnos", v);
+      s("totalCuotas", String((parseInt(v) || 0) * 12));
+    },
+    placeholder: "20"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: S.label
+  }, "Cuotas"), /*#__PURE__*/React.createElement(NumInput, {
     value: f.totalCuotas,
     onChange: function (v) {
       s("totalCuotas", v);
@@ -6846,7 +6864,7 @@ function Inmobiliario({
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: S.label
-  }, "Cuotas pagadas"), /*#__PURE__*/React.createElement(NumInput, {
+  }, "Pagadas"), /*#__PURE__*/React.createElement(NumInput, {
     value: f.cuotasPagadas,
     onChange: function (v) {
       s("cuotasPagadas", v);
@@ -8804,6 +8822,25 @@ function App() {
         setGKey(sto.get(`gk:${s.email}`) || "");
         var rt = sto.get("rt:" + s.email);
         if (rt) setRiskTarget(rt);
+        var rawInv = sto.get(`inv:${s.email}`) || [];
+        if (rawInv.length) {
+          var fixed = rawInv.map(function (i2) {
+            return Object.assign({
+              risk: "medio",
+              currency: "CLP",
+              category: "Otro",
+              amount: 0,
+              type: "individual",
+              platform: "Directo",
+              movements: [],
+              snapshots: []
+            }, i2);
+          });
+          if (JSON.stringify(fixed) !== JSON.stringify(rawInv)) {
+            sto.set(`inv:${s.email}`, fixed);
+          }
+          setInv(fixed);
+        }
       }
     }
     fetch("https://mindicador.cl/api").then(function (r) {
@@ -8833,7 +8870,19 @@ function App() {
     if (!isDemo) sto.set("sess", {
       email: u.email
     });
-    setInv(sto.get(`inv:${u.email}`) || []);
+    var rawI = sto.get(`inv:${u.email}`) || [];
+    setInv(rawI.map(function (i2) {
+      return Object.assign({
+        risk: "medio",
+        currency: "CLP",
+        category: "Otro",
+        amount: 0,
+        type: "individual",
+        platform: "Directo",
+        movements: [],
+        snapshots: []
+      }, i2);
+    }));
     setHist(sto.get(`h:${u.email}`) || []);
     setGKey(sto.get(`gk:${u.email}`) || "");
     var rt3 = sto.get("rt:" + u.email);
@@ -9960,7 +10009,11 @@ function App() {
       items.forEach(function (i) {
         br[i.risk || "medio"] += toCLP(i.amount || 0, i.currency, rates);
       });
-      var tgt = riskTarget[tp];
+      var tgt = riskTarget && riskTarget[tp] ? riskTarget[tp] : {
+        bajo: 33,
+        medio: 34,
+        alto: 33
+      };
       ["bajo", "medio", "alto"].forEach(function (r) {
         var pct = Math.round(br[r] / tot * 100);
         var diff = pct - tgt[r];
@@ -10373,8 +10426,20 @@ function App() {
       r.onload = function (ev) {
         try {
           var d = JSON.parse(ev.target.result);
-          if (d.inv) setInv(d.inv);
-          if (d.inv) sto.set("inv:" + user.email, d.inv);
+          if (d.inv) {
+            var normalized = d.inv.map(function (i2) {
+              return Object.assign({
+                risk: "medio",
+                currency: "CLP",
+                category: "Otro",
+                amount: 0,
+                type: "individual",
+                platform: "Directo"
+              }, i2);
+            });
+            setInv(normalized);
+            sto.set("inv:" + user.email, normalized);
+          }
           if (d.hist) setHist(d.hist);
           if (d.hist) sto.set("h:" + user.email, d.hist);
           if (d.props) sto.set("prop:" + user.email, d.props);

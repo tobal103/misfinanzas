@@ -6981,6 +6981,7 @@ function Gastos({
   gKey,
   userEmail
 }) {
+  var [modo, setModo] = useState("gasto");
   var expKey = (modo === "gasto" ? "exp:" : "inc:") + (userEmail || "x");
   var catKey = "expCat:" + (userEmail || "x");
   var defCatsG = ["Alimentación", "Transporte", "Arriendo/Vivienda", "Servicios", "Salud", "Educación", "Entretenimiento", "Ropa", "Seguros", "Otros"];
@@ -7000,7 +7001,6 @@ function Gastos({
   var [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   var [view, setView] = useState("month");
   var [gTipo, setGTipo] = useState("personal");
-  var [modo, setModo] = useState("gasto");
   var [catFilter, setCatFilter] = useState(null);
   var [f, setF] = useState({
     name: "",

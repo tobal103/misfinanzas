@@ -250,6 +250,210 @@ function getRet(inv) {
 function getGain(inv) {
   return inv.amount - getDep(inv);
 }
+function guessTicker(name) {
+  var s = String(name || "").toUpperCase();
+  var m = s.match(/\b([A-Z]{1,5})\b/);
+  return m ? m[1] : "";
+}
+function isTradable(i) {
+  var c = i && i.category || "";
+  return c === "Acciones" || c === "Crypto";
+}
+var CRYPTO_IDS = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  SOL: "solana",
+  ADA: "cardano",
+  DOGE: "dogecoin",
+  XRP: "ripple",
+  BNB: "binancecoin",
+  MATIC: "matic-network",
+  DOT: "polkadot",
+  AVAX: "avalanche-2",
+  LTC: "litecoin"
+};
+function fetchQuote(ticker, isCrypto, fhKey) {
+  var t = String(ticker || "").trim().toUpperCase();
+  if (!t) return Promise.reject(new Error("Sin ticker"));
+  if (isCrypto) {
+    var id = CRYPTO_IDS[t] || t.toLowerCase();
+    return fetch("https://api.coingecko.com/api/v3/simple/price?ids=" + encodeURIComponent(id) + "&vs_currencies=usd").then(function (r) {
+      if (!r.ok) throw new Error("CoinGecko " + r.status);
+      return r.json();
+    }).then(function (j) {
+      var v = j && j[id] && j[id].usd;
+      if (!v) throw new Error("Sin precio para " + t);
+      return {
+        price: v,
+        src: "CoinGecko"
+      };
+    });
+  }
+  var tryStooq = function () {
+    return fetch("https://stooq.com/q/l/?s=" + encodeURIComponent(t.toLowerCase()) + ".us&f=sd2t2ohlcv&h&e=csv").then(function (r) {
+      if (!r.ok) throw new Error("Stooq " + r.status);
+      return r.text();
+    }).then(function (txt) {
+      var lines = String(txt || "").trim().split("\n");
+      if (lines.length < 2) throw new Error("Stooq sin datos");
+      var cols = lines[1].split(",");
+      var close = parseFloat(cols[6]);
+      if (!close || isNaN(close)) throw new Error("Stooq sin cierre");
+      return {
+        price: close,
+        src: "Stooq"
+      };
+    });
+  };
+  var tryYahoo = function () {
+    return fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(t) + "?interval=1d&range=1d").then(function (r) {
+      if (!r.ok) throw new Error("Yahoo " + r.status);
+      return r.json();
+    }).then(function (j) {
+      var res = j && j.chart && j.chart.result && j.chart.result[0];
+      var v = res && res.meta && (res.meta.regularMarketPrice || res.meta.previousClose);
+      if (!v) throw new Error("Yahoo sin precio");
+      return {
+        price: v,
+        src: "Yahoo"
+      };
+    });
+  };
+  var tryFinnhub = function () {
+    if (!fhKey) throw new Error("Sin fuente disponible");
+    return fetch("https://finnhub.io/api/v1/quote?symbol=" + encodeURIComponent(t) + "&token=" + encodeURIComponent(fhKey)).then(function (r) {
+      if (!r.ok) throw new Error("Finnhub " + r.status);
+      return r.json();
+    }).then(function (j) {
+      if (!j || !j.c) throw new Error("Finnhub sin precio");
+      return {
+        price: j.c,
+        src: "Finnhub"
+      };
+    });
+  };
+  return tryStooq().catch(function () {
+    return tryYahoo();
+  }).catch(function () {
+    return tryFinnhub();
+  });
+}
+function mkDateTime(iso) {
+  var d = new Date(iso);
+  return d.toLocaleDateString("es-CL", {
+    day: "numeric",
+    month: "short"
+  }) + " " + d.toLocaleTimeString("es-CL", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+function periodNow() {
+  var h = new Date().getHours();
+  return h < 12 ? "m" : h < 18 ? "t" : "n";
+}
+function periodStamp() {
+  return new Date().toISOString().split("T")[0] + "-" + periodNow();
+}
+function norm(s) {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+function findDupes(list, keyFn) {
+  var g = {};
+  (list || []).forEach(function (it, idx) {
+    var k = keyFn(it);
+    if (!k) return;
+    if (!g[k]) g[k] = [];
+    g[k].push({
+      it: it,
+      idx: idx
+    });
+  });
+  var out = [];
+  for (var k in g) {
+    if (g[k].length > 1) out.push({
+      key: k,
+      items: g[k]
+    });
+  }
+  return out;
+}
+function DupeAlert({
+  groups,
+  label,
+  render
+}) {
+  var [open, setOpen] = useState(false);
+  if (!groups || !groups.length) return null;
+  var n = groups.reduce(function (s, g) {
+    return s + g.items.length;
+  }, 0);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FEF3C7",
+      border: "1px solid #FCD34D",
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: function () {
+      setOpen(!open);
+    },
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: "#92400E"
+    }
+  }, "⚠️ ", groups.length, " posible", groups.length > 1 ? "s" : "", " duplicado", groups.length > 1 ? "s" : "", " en ", label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: "#92400E"
+    }
+  }, open ? "▲" : "▼")), !open && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#92400E",
+      marginTop: 4
+    }
+  }, n, " registros involucrados · toca para revisar"), open && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8
+    }
+  }, groups.map(function (g, gi) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: gi,
+      style: {
+        background: "rgba(255,255,255,0.6)",
+        borderRadius: 8,
+        padding: 8,
+        marginBottom: 6
+      }
+    }, g.items.map(function (x, xi) {
+      return /*#__PURE__*/React.createElement("div", {
+        key: xi,
+        style: {
+          fontSize: 12,
+          color: "#78350F",
+          padding: "2px 0"
+        }
+      }, render(x.it));
+    }));
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#92400E",
+      marginTop: 4
+    }
+  }, "Solo es un aviso — nada se elimina. Revisa si es correcto.")));
+}
 function NumInput({
   value,
   onChange,
@@ -259,30 +463,46 @@ function NumInput({
 }) {
   var [editing, setEditing] = useState(false);
   var [raw, setRaw] = useState("");
+  var maxDec = decimals || 2;
   var grp = function (s) {
     return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
-  var fmtLive = function (txt) {
-    var s = String(txt == null ? "" : txt).replace(/[^\d,\.]/g, "");
-    var neg = false;
-    s = s.replace(/\./g, ",");
+  // El punto SIEMPRE es separador de miles (lo insertamos nosotros).
+  // La coma SIEMPRE es decimal. Asi el ida y vuelta nunca se corrompe.
+  var parse = function (txt) {
+    var s = String(txt == null ? "" : txt).replace(/[^\d,]/g, "");
     var parts = s.split(",");
     var ip = (parts[0] || "").replace(/^0+(?=\d)/, "");
     var hasSep = parts.length > 1;
-    var dp = hasSep ? parts.slice(1).join("").slice(0, decimals ? decimals : 2) : "";
-    var shown = grp(ip);
-    if (hasSep) shown = shown + "," + dp;
-    var clean = ip + (dp ? "." + dp : "");
+    var dp = hasSep ? parts.slice(1).join("").slice(0, maxDec) : "";
     return {
-      shown: shown,
-      clean: clean
+      ip: ip,
+      dp: dp,
+      hasSep: hasSep,
+      clean: ip ? ip + (dp ? "." + dp : "") : dp ? "0." + dp : ""
     };
   };
-  var num = parseFloat(value) || 0;
-  var settled = value !== "" && value != null ? decimals ? num.toLocaleString("es-CL", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  }) : Math.round(num).toLocaleString("es-CL") : "";
+  var fmtLive = function (txt) {
+    var r = parse(txt);
+    var shown = grp(r.ip);
+    if (r.hasSep) shown = shown + "," + r.dp;
+    return {
+      shown: shown,
+      clean: r.clean
+    };
+  };
+  var num = parseFloat(value);
+  var hasVal = value !== "" && value != null && !isNaN(num);
+  var settled = "";
+  if (hasVal) {
+    if (decimals) settled = num.toLocaleString("es-CL", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });else settled = num.toLocaleString("es-CL", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    });
+  }
   var display = editing ? raw : settled;
   return React.createElement("input", {
     style: Object.assign({}, S.input, st || {}),
@@ -292,11 +512,11 @@ function NumInput({
     value: display,
     onFocus: function () {
       setEditing(true);
-      setRaw(value !== "" && value != null ? fmtLive(String(value).replace(".", ",")).shown : "");
+      setRaw(hasVal ? fmtLive(String(value).replace(".", ",")).shown : "");
     },
     onBlur: function () {
       setEditing(false);
-      onChange(fmtLive(raw).clean);
+      onChange(parse(raw).clean);
     },
     onChange: function (e) {
       var r = fmtLive(e.target.value);
@@ -1863,8 +2083,12 @@ function InvDetail({
   rates,
   onBack,
   onUpdate,
-  onDelete
+  onDelete,
+  fhKey
 }) {
+  const [tkr, setTkr] = useState(inv.ticker || guessTicker(inv.name));
+  const [pxBusy, setPxBusy] = useState(false);
+  const [pxErr, setPxErr] = useState("");
   const [showAction, setShowAction] = useState(null);
   const [editMov, setEditMov] = useState(null);
   const [editInfo, setEditInfo] = useState(false);
@@ -2135,7 +2359,197 @@ function InvDetail({
       borderRadius: 12,
       marginTop: 8
     }
-  }, "✏️ Editar nombre, tipo, categoría...")), /*#__PURE__*/React.createElement("div", {
+  }, "✏️ Editar nombre, tipo, categoría...")), isTradable(inv) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "16px 20px 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.card,
+      border: "1px solid " + C.brd
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600
+    }
+  }, "📈 Precio automático"), inv.ticker && /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      onUpdate(Object.assign({}, inv, {
+        ticker: null,
+        shares: null,
+        lastPrice: null,
+        pxStamp: null
+      }));
+      setPxErr("");
+    },
+    style: {
+      background: "none",
+      border: "none",
+      color: C.t3,
+      fontSize: 11,
+      cursor: "pointer"
+    }
+  }, "Desvincular")), !inv.ticker && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.t2,
+      marginBottom: 8,
+      lineHeight: 1.5
+    }
+  }, "Vincula el ticker y la app actualizará el valor sola 3 veces al día (mañana, mediodía y noche)."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.input,
+      flex: 1,
+      padding: "8px 12px",
+      fontSize: 14,
+      textTransform: "uppercase"
+    },
+    placeholder: inv.category === "Crypto" ? "BTC" : "MSFT",
+    value: tkr,
+    onChange: function (e) {
+      setTkr(e.target.value.toUpperCase());
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    disabled: pxBusy || !tkr,
+    onClick: function () {
+      setPxBusy(true);
+      setPxErr("");
+      fetchQuote(tkr, inv.category === "Crypto", fhKey).then(function (q) {
+        var val = inv.amount || 0;
+        if (val <= 0) {
+          setPxErr("Primero registra el valor actual de esta posición.");
+          setPxBusy(false);
+          return;
+        }
+        var sh = val / q.price;
+        onUpdate(Object.assign({}, inv, {
+          ticker: tkr,
+          shares: sh,
+          lastPrice: q.price,
+          pxSrc: q.src,
+          pxStamp: periodStamp(),
+          pxAt: new Date().toISOString()
+        }));
+        setPxBusy(false);
+      }).catch(function (err) {
+        setPxErr(err.message || "No se pudo obtener el precio");
+        setPxBusy(false);
+      });
+    },
+    style: {
+      background: C.acc,
+      color: "#fff",
+      border: "none",
+      borderRadius: 12,
+      padding: "0 16px",
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: "pointer",
+      opacity: pxBusy || !tkr ? 0.5 : 1
+    }
+  }, pxBusy ? "..." : "Vincular"))), inv.ticker && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, inv.ticker), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, inv.lastPrice ? "US$" + Number(inv.lastPrice).toLocaleString("es-CL", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }) : "—")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 11,
+      color: C.t3
+    }
+  }, /*#__PURE__*/React.createElement("span", null, inv.shares ? Number(inv.shares).toFixed(4).replace(/\.?0+$/, "") + " unidades" : ""), /*#__PURE__*/React.createElement("span", null, inv.pxAt ? "Act. " + mkDateTime(inv.pxAt) : "")), /*#__PURE__*/React.createElement("button", {
+    disabled: pxBusy,
+    onClick: function () {
+      setPxBusy(true);
+      setPxErr("");
+      fetchQuote(inv.ticker, inv.category === "Crypto", fhKey).then(function (q) {
+        var sh = inv.shares || (inv.amount || 0) / q.price;
+        var nv = Math.round(sh * q.price * 100) / 100;
+        var movs = (inv.movements || []).slice();
+        movs.push({
+          date: new Date().toISOString(),
+          type: "valuation",
+          amount: nv,
+          note: "Precio de mercado " + q.src
+        });
+        var snaps = (inv.snapshots || []).slice();
+        snaps.push({
+          v: nv,
+          dep: getDep(inv),
+          label: fD(new Date().toISOString())
+        });
+        onUpdate(Object.assign({}, inv, {
+          amount: nv,
+          shares: sh,
+          lastPrice: q.price,
+          pxSrc: q.src,
+          pxStamp: periodStamp(),
+          pxAt: new Date().toISOString(),
+          movements: movs,
+          snapshots: snaps
+        }));
+        setPxBusy(false);
+      }).catch(function (err) {
+        setPxErr(err.message || "No se pudo obtener el precio");
+        setPxBusy(false);
+      });
+    },
+    style: {
+      ...S.btn,
+      background: "none",
+      border: "2px solid " + C.acc,
+      color: C.acc,
+      marginTop: 8,
+      padding: 10,
+      fontSize: 13,
+      borderRadius: 12
+    }
+  }, pxBusy ? "⏳ Consultando..." : "🔄 Actualizar ahora")), pxErr && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.danL,
+      color: C.dan,
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 12,
+      marginTop: 8,
+      lineHeight: 1.5
+    }
+  }, "⚠️ ", pxErr, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.t2,
+      marginTop: 6
+    }
+  }, "Si falla seguido, agrega una API key gratuita de Finnhub en ⚙️ Ajustes.")))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "16px 20px 0"
     }
@@ -2491,7 +2905,8 @@ function InvDetail({
 function ImportModal({
   onClose,
   onImport,
-  gKey
+  gKey,
+  inv
 }) {
   const [mode, setMode] = useState("manual");
   const [text, setText] = useState("");
@@ -2581,6 +2996,24 @@ function ImportModal({
         var processed = parsed.map(function (p) {
           var r2 = {};
           for (var k in p) r2[k] = p[k];
+          var cand = (inv || []).filter(function (x) {
+            var a = norm(x.name),
+              b = norm(r2.name);
+            if (!a || !b) return false;
+            return a === b || a.indexOf(b) > -1 || b.indexOf(a) > -1;
+          });
+          if (cand.length > 1 && r2.platform) {
+            var byP = cand.filter(function (x) {
+              return norm(x.platform) === norm(r2.platform);
+            });
+            if (byP.length) cand = byP;
+          }
+          if (cand.length) {
+            r2._match = cand[0];
+            r2._mode = "update";
+          } else {
+            r2._mode = "new";
+          }
           if (r2.gain !== undefined && r2.gain !== 0 && r2.gain !== null) {
             r2._gainMode = true;
             r2._gain = Math.abs(r2.gain);
@@ -2820,7 +3253,72 @@ function ImportModal({
         };
         setRes(n);
       }
-    }), /*#__PURE__*/React.createElement("div", {
+    }), r._match && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: r._mode === "update" ? "#DBEAFE" : C.inp,
+        borderRadius: 8,
+        padding: 8,
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: r._mode === "update" ? "#1E40AF" : C.t2,
+        fontWeight: 600,
+        marginBottom: 4
+      }
+    }, r._mode === "update" ? "🔄 Ya existe: se actualizará" : "➕ Se creará una nueva"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t2,
+        marginBottom: 6
+      }
+    }, r._match.name, " · ", r._match.platform, " · actual ", fmtCur(r._match.amount, r._match.currency)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        const n = [...res];
+        n[i] = {
+          ...n[i],
+          _mode: "update"
+        };
+        setRes(n);
+      },
+      style: {
+        flex: 1,
+        padding: "6px",
+        border: "none",
+        borderRadius: 6,
+        fontSize: 11,
+        fontWeight: 600,
+        cursor: "pointer",
+        background: r._mode === "update" ? "#2563EB" : "transparent",
+        color: r._mode === "update" ? "#fff" : C.t2
+      }
+    }, "Actualizar"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        const n = [...res];
+        n[i] = {
+          ...n[i],
+          _mode: "new"
+        };
+        setRes(n);
+      },
+      style: {
+        flex: 1,
+        padding: "6px",
+        border: "none",
+        borderRadius: 6,
+        fontSize: 11,
+        fontWeight: 600,
+        cursor: "pointer",
+        background: r._mode === "new" ? C.acc : "transparent",
+        color: r._mode === "new" ? "#fff" : C.t2
+      }
+    }, "Crear nueva"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
@@ -3118,7 +3616,13 @@ function ImportModal({
       onImport(res);
       onClose();
     }
-  }, "✅ Importar ", res.length), /*#__PURE__*/React.createElement("button", {
+  }, function () {
+    var u = res.filter(function (x) {
+      return x._mode === "update";
+    }).length;
+    var nw = res.length - u;
+    return "✅ " + (u ? u + " actualizar" : "") + (u && nw ? " · " : "") + (nw ? nw + " nueva" + (nw > 1 ? "s" : "") : "");
+  }()), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.btn,
       background: "none",
@@ -3136,6 +3640,8 @@ function SettingsModal({
   setLive,
   notif,
   setNotif,
+  fhKey,
+  setFhKey,
   onClose,
   gKey,
   setGKey,
@@ -3271,11 +3777,39 @@ function SettingsModal({
     })));
   }), live && /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      color: C.t3,
       marginTop: 8
     }
-  }, "Los precios de acciones (USD) se actualizan al abrir la app"), notif && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginBottom: 6,
+      lineHeight: 1.5
+    }
+  }, "Vincula el ticker en cada acción o crypto (dentro de su detalle). Se actualizan 3 veces al día: mañana, mediodía y noche."), /*#__PURE__*/React.createElement("label", {
+    style: {
+      ...S.label,
+      fontSize: 10
+    }
+  }, "API key Finnhub (opcional, solo si falla)"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.input,
+      padding: "8px 12px",
+      fontSize: 12
+    },
+    placeholder: "Pega tu key gratuita",
+    value: fhKey || "",
+    onChange: function (e) {
+      setFhKey(e.target.value);
+      sto.set("fh:" + ue, e.target.value);
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t3,
+      marginTop: 4
+    }
+  }, "Gratis en finnhub.io — solo si las fuentes abiertas fallan")), notif && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.t3,
@@ -4687,7 +5221,15 @@ function Planificar({
       fontWeight: 600,
       cursor: "pointer"
     }
-  }, "+ Nueva")), goals.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, "+ Nueva")), /*#__PURE__*/React.createElement(DupeAlert, {
+    groups: findDupes(goals, function (g2) {
+      return norm(g2.name) + "|" + Math.round(g2.amount || 0);
+    }),
+    label: "metas",
+    render: function (x) {
+      return x.name + " · " + fmt(x.amount || 0);
+    }
+  }), goals.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "30px 20px",
@@ -6201,7 +6743,15 @@ function Inmobiliario({
     style: {
       padding: "8px 20px 0"
     }
-  }, props.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(DupeAlert, {
+    groups: findDupes(props, function (p2) {
+      return norm(p2.name);
+    }),
+    label: "propiedades",
+    render: function (x) {
+      return x.name + " · " + fmt(x.valorActual || x.value || 0);
+    }
+  }), props.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "40px 20px",
@@ -7439,6 +7989,9 @@ function Gastos({
   var gMon = modo === "gasto" ? totalMonth : oMon;
   var iYr = modo === "gasto" ? oYr : totalYear;
   var gYr = modo === "gasto" ? totalYear : oYr;
+  var dupeGroups = findDupes(baseExps, function (e2) {
+    return norm(e2.name) + "|" + Math.round(e2.clp || 0) + "|" + (e2.date || "").slice(0, 7) + "|" + (e2.tipo || "personal");
+  });
   var displayByCat = {};
   baseExps.forEach(function (e2) {
     displayByCat[e2.cat || "Otros"] = (displayByCat[e2.cat || "Otros"] || 0) + (e2.clp || toCLP2(e2.amount, e2.cur));
@@ -7993,7 +8546,16 @@ function Gastos({
       textAlign: "center",
       marginTop: 8
     }
-  }, catFilter ? "Toca la categoría de nuevo para ver todo" : "Toca una categoría para filtrar")), catFilter && /*#__PURE__*/React.createElement("div", {
+  }, catFilter ? "Toca la categoría de nuevo para ver todo" : "Toca una categoría para filtrar")), /*#__PURE__*/React.createElement(DupeAlert, {
+    groups: dupeGroups,
+    label: modo === "ingreso" ? "ingresos" : "gastos",
+    render: function (x) {
+      return x.name + " · " + fmt(x.clp || 0) + " · " + mkDate(x.date).toLocaleDateString("es-CL", {
+        day: "numeric",
+        month: "short"
+      });
+    }
+  }), catFilter && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
@@ -8876,6 +9438,7 @@ function App() {
   const [summary, setSummary] = useState("");
   const [dark, setDark] = useState(sto.get("dark") || false);
   const [live, setLive] = useState(sto.get("live") || false);
+  const [fhKey, setFhKey] = useState("");
   const [notif, setNotif] = useState(sto.get("notif") || false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -8905,22 +9468,66 @@ function App() {
     UF: 38000
   });
   useEffect(function () {
-    if (!live || !user) return;
-    var tickers = [];
-    inv.forEach(function (i) {
-      if (i.currency === "USD" && i.category === "Acciones") {
-        var t = (i.name.match(/^([A-Z]{1,5})/) || [])[1];
-        if (t) tickers.push({
-          id: i.id,
-          t: t
+    if (!live || !user || !inv.length) return;
+    var stamp = periodStamp();
+    var pend = inv.filter(function (i) {
+      return i.ticker && i.shares && i.pxStamp !== stamp;
+    });
+    if (!pend.length) return;
+    var results = {};
+    var done = 0;
+    var finish = function () {
+      done++;
+      if (done < pend.length) return;
+      var n = 0;
+      var next = inv.map(function (i) {
+        var r = results[i.id];
+        if (!r) return i;
+        n++;
+        var nv = Math.round(i.shares * r.price * 100) / 100;
+        var movs = (i.movements || []).slice();
+        movs.push({
+          date: new Date().toISOString(),
+          type: "valuation",
+          amount: nv,
+          note: "Precio de mercado " + r.src
         });
+        var snaps = (i.snapshots || []).slice();
+        snaps.push({
+          v: nv,
+          dep: getDep(i),
+          label: fD(new Date().toISOString())
+        });
+        return Object.assign({}, i, {
+          amount: nv,
+          lastPrice: r.price,
+          pxSrc: r.src,
+          pxStamp: stamp,
+          pxAt: new Date().toISOString(),
+          movements: movs,
+          snapshots: snaps
+        });
+      });
+      if (n) {
+        setInv(next);
+        sto.set("inv:" + user.email, next);
+        flash(n + " precio" + (n > 1 ? "s" : "") + " actualizado" + (n > 1 ? "s" : "") + " ✓");
+      } else {
+        var mark = inv.map(function (i) {
+          return i.ticker && i.shares ? Object.assign({}, i, {
+            pxStamp: stamp
+          }) : i;
+        });
+        setInv(mark);
+        sto.set("inv:" + user.email, mark);
       }
+    };
+    pend.forEach(function (i) {
+      fetchQuote(i.ticker, i.category === "Crypto", fhKey).then(function (q) {
+        results[i.id] = q;
+      }).catch(function () {}).then(finish);
     });
-    if (!tickers.length) return;
-    tickers.forEach(function (tk) {
-      fetch("https://api.frankfurter.app/latest").then(function () {}).catch(function () {});
-    });
-  }, [live, user]);
+  }, [live, user, fhKey]);
   useEffect(function () {
     applyTheme(dark);
     document.body.style.background = C.bg;
@@ -9010,6 +9617,7 @@ function App() {
         setGKey(sto.get(`gk:${s.email}`) || "");
         var rt = sto.get("rt:" + s.email);
         if (rt) setRiskTarget(rt);
+        setFhKey(sto.get("fh:" + s.email) || "");
         var rawInv = sto.get(`inv:${s.email}`) || [];
         var oExp = sto.get("exp:" + s.email);
         if (oExp && oExp.length) {
@@ -9131,12 +9739,59 @@ function App() {
     flash("Eliminada");
   };
   const impI = items => {
-    const ns = items.map(it => {
-      const amt = parseFloat(it.amount) || 0;
-      const inv2 = parseFloat(it.invested) || amt;
-      const now = new Date().toISOString();
-      return {
-        ...it,
+    var now = new Date().toISOString();
+    var updated = 0,
+      created = 0;
+    var next = inv.slice();
+    var fresh = [];
+    items.forEach(function (it) {
+      var amt = parseFloat(it.amount) || 0;
+      var invested = parseFloat(it.invested) || amt;
+      if (it._mode === "update" && it._match) {
+        var pos = -1;
+        for (var q = 0; q < next.length; q++) {
+          if (next[q].id === it._match.id) {
+            pos = q;
+            break;
+          }
+        }
+        if (pos > -1) {
+          var cur = next[pos];
+          var movs = (cur.movements || []).slice();
+          var prevDep = getDep(cur);
+          if (invested > prevDep) {
+            movs.push({
+              date: now,
+              type: "deposit",
+              amount: invested - prevDep,
+              note: "Aporte detectado al importar"
+            });
+          }
+          movs.push({
+            date: now,
+            type: "valuation",
+            amount: amt,
+            note: "Actualización desde importación"
+          });
+          var snaps = (cur.snapshots || []).slice();
+          var newDep = invested > prevDep ? invested : prevDep;
+          snaps.push({
+            v: amt,
+            dep: newDep,
+            label: fD(now)
+          });
+          next[pos] = Object.assign({}, cur, {
+            amount: amt,
+            movements: movs,
+            snapshots: snaps,
+            currency: it.currency || cur.currency,
+            platform: it.platform || cur.platform
+          });
+          updated++;
+          return;
+        }
+      }
+      fresh.push(Object.assign({}, it, {
         id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
         type: it.type || "individual",
         risk: it.risk || "medio",
@@ -9144,7 +9799,7 @@ function App() {
         movements: [{
           date: now,
           type: "deposit",
-          amount: inv2,
+          amount: invested,
           note: "Inversión original"
         }, {
           date: now,
@@ -9153,19 +9808,31 @@ function App() {
           note: "Valor actual al importar"
         }],
         snapshots: [{
-          v: inv2,
-          dep: inv2,
+          v: invested,
+          dep: invested,
           label: "Inicio"
         }, {
           v: amt,
-          dep: inv2,
+          dep: invested,
           label: fD(now)
         }],
         created: now
-      };
+      }));
+      created++;
     });
-    upd([...inv, ...ns]);
-    flash(`${ns.length} importada${ns.length > 1 ? "s" : ""} ✓`);
+    fresh.forEach(function (x) {
+      delete x._match;
+      delete x._mode;
+    });
+    next.forEach(function (x) {
+      delete x._match;
+      delete x._mode;
+    });
+    upd(next.concat(fresh));
+    var msg = [];
+    if (updated) msg.push(updated + " actualizada" + (updated > 1 ? "s" : ""));
+    if (created) msg.push(created + " nueva" + (created > 1 ? "s" : ""));
+    flash(msg.join(" · ") + " ✓");
   };
   if (!user) return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Login, {
     onLogin: login,
@@ -10045,7 +10712,15 @@ function App() {
         color: fR >= 0 ? "#4ADE80" : "#F87171"
       }
     }, fP(fR), " (", fmt(fV - fC), ")") : null;
-  }()), (() => {
+  }()), /*#__PURE__*/React.createElement(DupeAlert, {
+    groups: findDupes(filtered, function (i2) {
+      return norm(i2.name) + "|" + norm(i2.platform);
+    }),
+    label: "inversiones",
+    render: function (x) {
+      return x.name + " · " + x.platform + " · " + fmtCur(x.amount, x.currency);
+    }
+  }), (() => {
     const g = {};
     filtered.forEach(i => {
       const p = i.platform || "Sin plataforma";
@@ -10764,7 +11439,8 @@ function App() {
   }), showImp && /*#__PURE__*/React.createElement(ImportModal, {
     onClose: () => setShowImp(false),
     onImport: impI,
-    gKey: gKey
+    gKey: gKey,
+    inv: inv
   }), showExport && /*#__PURE__*/React.createElement(ExportModal, {
     onClose: () => setShowExport(false),
     inv: inv,
@@ -10787,7 +11463,9 @@ function App() {
     live: live,
     setLive: setLive,
     notif: notif,
-    setNotif: setNotif
+    setNotif: setNotif,
+    fhKey: fhKey,
+    setFhKey: setFhKey
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",

@@ -5707,7 +5707,7 @@ function Inmobiliario({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         ...S.card,
-        background: C.pri,
+        background: modo === "ingreso" ? "#064E3B" : C.pri,
         padding: 16
       }
     }, /*#__PURE__*/React.createElement("div", {
@@ -7326,7 +7326,7 @@ function Gastos({
     setScanRes(null);
     setScanErr("");
     setShowScan(false);
-    setNote(valid.length + " " + (valid.length === 1 ? "gasto guardado" : "gastos guardados") + " · " + fmt(sum));
+    setNote(valid.length + " " + (valid.length === 1 ? modo === "ingreso" ? "ingreso guardado" : "gasto guardado" : modo === "ingreso" ? "ingresos guardados" : "gastos guardados") + " · " + fmt(sum));
     setTimeout(function () {
       setNote("");
     }, 3000);
@@ -7459,7 +7459,7 @@ function Gastos({
       setShowAdd(true);
     },
     style: {
-      background: C.acc,
+      background: modo === "ingreso" ? C.acc : C.acc,
       color: "#fff",
       border: "none",
       borderRadius: 8,
@@ -7468,7 +7468,7 @@ function Gastos({
       fontWeight: 600,
       cursor: "pointer"
     }
-  }, "+"))), /*#__PURE__*/React.createElement("div", {
+  }, "+ ", modo === "ingreso" ? "Ingreso" : "Gasto"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 4,
@@ -7689,64 +7689,60 @@ function Gastos({
       marginTop: 4,
       textAlign: "right"
     }
-  }, pctBudget.toFixed(0), "% usado")), (iMon > 0 || gMon > 0) && /*#__PURE__*/React.createElement("div", {
+  }, pctBudget.toFixed(0), "% usado")), (iMon > 0 || gMon > 0 || iYr > 0 || gYr > 0) && /*#__PURE__*/React.createElement("div", {
     style: {
       ...S.card,
-      padding: 12
+      padding: 12,
+      border: "1px solid " + C.brd
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: 600,
-      marginBottom: 8
+      color: C.t2,
+      marginBottom: 6
     }
-  }, "📊 Balance ", view === "year" ? "Anual" : "Mensual"), /*#__PURE__*/React.createElement("div", {
+  }, "📊 Resumen ", view === "year" ? "Anual" : "Mensual", " — ", gTipo === "familiar" ? "Familiar" : "Personal"), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      justifyContent: "space-between",
-      fontSize: 13,
-      padding: "4px 0"
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      gap: 8,
+      textAlign: "center"
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      color: C.t2
-    }
-  }, "Ingresos"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontWeight: 600,
+      fontSize: 10,
       color: C.acc
     }
-  }, fmt(view === "year" ? iYr : iMon))), /*#__PURE__*/React.createElement("div", {
+  }, "Ingresos"), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      justifyContent: "space-between",
-      fontSize: 13,
-      padding: "4px 0"
+      fontSize: 14,
+      fontWeight: 700,
+      color: C.acc
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, fmt(view === "year" ? iYr : iMon))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      color: C.t2
-    }
-  }, "Gastos"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontWeight: 600,
+      fontSize: 10,
       color: C.dan
     }
-  }, fmt(view === "year" ? gYr : gMon))), /*#__PURE__*/React.createElement("div", {
+  }, "Gastos"), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      justifyContent: "space-between",
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: 700,
-      padding: "6px 0",
-      borderTop: "2px solid " + C.brd,
-      marginTop: 4
+      color: C.dan
     }
-  }, /*#__PURE__*/React.createElement("span", null, "Diferencia"), /*#__PURE__*/React.createElement("span", {
+  }, fmt(view === "year" ? gYr : gMon))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
+      fontSize: 10,
+      color: C.t2
+    }
+  }, "Ahorro"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
       color: (view === "year" ? iYr - gYr : iMon - gMon) >= 0 ? C.acc : C.dan
     }
-  }, fmt(view === "year" ? iYr - gYr : iMon - gMon)))), view === "month" && /*#__PURE__*/React.createElement("button", {
+  }, fmt(view === "year" ? iYr - gYr : iMon - gMon))))), view === "month" && /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       setShowBudget(true);
     },
@@ -7991,7 +7987,7 @@ function Gastos({
     style: {
       fontSize: 13
     }
-  }, catFilter ? "Sin gastos en " + catFilter : "Sin gastos " + (view === "year" ? "este año" : "este mes")), catFilter && /*#__PURE__*/React.createElement("button", {
+  }, catFilter ? "Sin " + (modo === "ingreso" ? "ingresos" : "gastos") + " en " + catFilter : "Sin " + (modo === "ingreso" ? "ingresos" : "gastos") + " " + (view === "year" ? "este año" : "este mes")), catFilter && /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       setCatFilter(null);
     },
@@ -8527,7 +8523,7 @@ function Gastos({
       marginBottom: 10,
       lineHeight: 1.5
     }
-  }, "Sube ", /*#__PURE__*/React.createElement("b", null, "una o varias"), " fotos de boletas o PDFs (hasta 10). Se agregarán como ", /*#__PURE__*/React.createElement("b", null, gTipo === "familiar" ? "👨‍👩‍👧 Familiar" : "👤 Personal"), "."), /*#__PURE__*/React.createElement("label", {
+  }, modo === "ingreso" ? "Sube comprobantes de ingreso" : "Sube fotos de boletas o PDFs", ". Se agregarán como ", /*#__PURE__*/React.createElement("b", null, gTipo === "familiar" ? "👨‍👩‍👧 Familiar" : "👤 Personal"), "."), /*#__PURE__*/React.createElement("label", {
     style: {
       ...S.btn,
       background: scanBusy ? C.brd : C.acc,

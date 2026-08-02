@@ -6988,7 +6988,7 @@ function Gastos({
   var defCatsI = ["Sueldo", "Arriendo cobrado", "Freelance", "Inversiones", "Bonos", "Ventas", "Otros"];
   var defCats = defCatsG;
   var [exps, setExps] = useState(sto.get(expKey) || []);
-  var [cats, setCats] = useState(sto.get(catKey) || defCats);
+  var [cats, setCats] = useState(sto.get(catKey + ":gasto") || defCatsG);
   var [showAdd, setShowAdd] = useState(false);
   var [showScan, setShowScan] = useState(false);
   var [editExp, setEditExp] = useState(null);
@@ -7005,7 +7005,7 @@ function Gastos({
   var [f, setF] = useState({
     name: "",
     amount: "",
-    cat: defCats[0],
+    cat: defCatsG[0],
     cur: "CLP",
     date: new Date().toISOString().split("T")[0],
     tipo: "personal"
@@ -7019,18 +7019,26 @@ function Gastos({
     });
   };
   useEffect(function () {
-    setExps(sto.get(expKey) || []);
-    setCats(sto.get(catKey) || defCats);
-  }, [userEmail]);
+    setExps(sto.get((modo === "gasto" ? "exp:" : "inc:") + (userEmail || "x")) || []);
+    setCats(sto.get(catKey + ":" + modo) || (modo === "ingreso" ? defCatsI : defCatsG));
+  }, [userEmail, modo]);
   useEffect(function () {
     setBudget(sto.get("budget:" + (userEmail || "x") + ":" + gTipo + ":" + modo) || 0);
   }, [userEmail, gTipo, modo]);
   useEffect(function () {
     setCatFilter(null);
   }, [gTipo, view, month, modo]);
+  useEffect(function () {
+    setF(function (p) {
+      return Object.assign({}, p, {
+        cat: (modo === "ingreso" ? defCatsI : defCatsG)[0]
+      });
+    });
+  }, [modo]);
   var save = function (e2) {
+    var k = (modo === "gasto" ? "exp:" : "inc:") + (userEmail || "x");
     setExps(e2);
-    sto.set(expKey, e2);
+    sto.set(k, e2);
   };
   var saveCats = function (c2) {
     setCats(c2);
@@ -7136,7 +7144,8 @@ function Gastos({
   var scanOne = function (fileData) {
     var hoy = new Date().toISOString().split("T")[0];
     var catList = cats.join(", ");
-    var prompt = "Analiza esta boleta, factura, comprobante o estado de cuenta y extrae CADA gasto por separado.\n\n" + "REGLAS DE MONTO (critico):\n" + "- En Chile el punto separa miles y la coma decimales. $89.500 son OCHENTA Y NUEVE MIL QUINIENTOS, no 89.5\n" + "- Devuelve amount como numero entero sin separadores. $89.500 => 89500\n" + "- Si es USD con decimales, usalos: US$8.99 => 8.99\n" + "- Ignora subtotales, IVA desglosado, propinas sugeridas y el TOTAL si ya listaste los items individuales.\n" + "- Si el documento solo muestra un total, devuelve ese unico gasto.\n\n" + "MONEDA: CLP por defecto. USD si dice USD/US$/dolares. UF si dice UF. EUR si dice EUR.\n" + "FECHA: usa la del documento en formato YYYY-MM-DD. Si no aparece, usa " + hoy + "\n" + "CATEGORIA: elige la que mejor calce de esta lista: " + catList + "\n" + "NOMBRE: descripcion corta, maximo 4 palabras.";
+    var esIng = modo === "ingreso";
+    var prompt = "Analiza este documento y extrae CADA " + (esIng ? "ingreso" : "gasto") + " por separado.\n\n" + "REGLAS DE MONTO (critico):\n" + "- En Chile el punto separa miles y la coma decimales. $89.500 son OCHENTA Y NUEVE MIL QUINIENTOS, no 89.5\n" + "- Devuelve amount como numero entero sin separadores. $89.500 => 89500\n" + "- Si es USD con decimales, usalos: US$8.99 => 8.99\n" + "- Ignora subtotales, IVA desglosado, propinas sugeridas y el TOTAL si ya listaste los items individuales.\n" + "- Si el documento solo muestra un total, devuelve ese unico registro.\n\n" + "MONEDA: CLP por defecto. USD si dice USD/US$/dolares. UF si dice UF. EUR si dice EUR.\n" + "FECHA: usa la del documento en formato YYYY-MM-DD. Si no aparece, usa " + hoy + "\n" + "CATEGORIA: elige la que mejor calce de esta lista: " + catList + "\n" + "NOMBRE: descripcion corta, maximo 4 palabras.";
     return fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=" + encodeURIComponent(gKey), {
       method: "POST",
       headers: {
@@ -7225,7 +7234,7 @@ function Gastos({
         var ct = cats.indexOf(p.category) > -1 ? p.category : "Otros";
         return {
           id: Date.now() + "-" + Math.random().toString(36).slice(2),
-          name: String(p.name || "Gasto").slice(0, 60),
+          name: String(p.name || (modo === "ingreso" ? "Ingreso" : "Gasto")).slice(0, 60),
           amount: amt,
           cat: ct,
           cur: cur,
@@ -7272,7 +7281,7 @@ function Gastos({
         setScanBusy(false);
         setScanProg(null);
         if (!all.length) {
-          setScanErr(errors.length ? errors.join(" · ") : "No se detectaron gastos. Prueba con fotos mas nitidas.");
+          setScanErr(errors.length ? errors.join(" · ") : "No se detectaron " + (modo === "ingreso" ? "ingresos" : "gastos") + ". Prueba con fotos mas nitidas.");
           return;
         }
         if (errors.length) setScanErr(errors.length + " de " + list.length + " fallaron: " + errors.join(" · "));
@@ -7300,12 +7309,13 @@ function Gastos({
       return x.amount > 0;
     });
     if (!valid.length) {
-      setScanErr("Los gastos no tienen monto valido.");
+      setScanErr("Los registros no tienen monto valido.");
       return;
     }
     var merged = valid.concat(exps);
+    var k2 = (modo === "gasto" ? "exp:" : "inc:") + (userEmail || "x");
     setExps(merged);
-    sto.set(expKey, merged);
+    sto.set(k2, merged);
     var months = valid.map(function (x) {
       return (x.date || "").slice(0, 7);
     }).filter(Boolean).sort();

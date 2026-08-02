@@ -6981,9 +6981,11 @@ function Gastos({
   gKey,
   userEmail
 }) {
-  var expKey = "exp:" + (userEmail || "x");
+  var expKey = (modo === "gasto" ? "exp:" : "inc:") + (userEmail || "x");
   var catKey = "expCat:" + (userEmail || "x");
-  var defCats = ["Alimentación", "Transporte", "Arriendo/Vivienda", "Servicios", "Salud", "Educación", "Entretenimiento", "Ropa", "Seguros", "Otros"];
+  var defCatsG = ["Alimentación", "Transporte", "Arriendo/Vivienda", "Servicios", "Salud", "Educación", "Entretenimiento", "Ropa", "Seguros", "Otros"];
+  var defCatsI = ["Sueldo", "Arriendo cobrado", "Freelance", "Inversiones", "Bonos", "Ventas", "Otros"];
+  var defCats = defCatsG;
   var [exps, setExps] = useState(sto.get(expKey) || []);
   var [cats, setCats] = useState(sto.get(catKey) || defCats);
   var [showAdd, setShowAdd] = useState(false);
@@ -6998,6 +7000,7 @@ function Gastos({
   var [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   var [view, setView] = useState("month");
   var [gTipo, setGTipo] = useState("personal");
+  var [modo, setModo] = useState("gasto");
   var [catFilter, setCatFilter] = useState(null);
   var [f, setF] = useState({
     name: "",
@@ -7020,18 +7023,18 @@ function Gastos({
     setCats(sto.get(catKey) || defCats);
   }, [userEmail]);
   useEffect(function () {
-    setBudget(sto.get("budget:" + (userEmail || "x") + ":" + gTipo) || 0);
-  }, [userEmail, gTipo]);
+    setBudget(sto.get("budget:" + (userEmail || "x") + ":" + gTipo + ":" + modo) || 0);
+  }, [userEmail, gTipo, modo]);
   useEffect(function () {
     setCatFilter(null);
-  }, [gTipo, view, month]);
+  }, [gTipo, view, month, modo]);
   var save = function (e2) {
     setExps(e2);
     sto.set(expKey, e2);
   };
   var saveCats = function (c2) {
     setCats(c2);
-    sto.set(catKey, c2);
+    sto.set(catKey + ":" + modo, c2);
   };
   var mkDate = function (s) {
     var p = String(s || "").split("-");
@@ -7334,12 +7337,13 @@ function Gastos({
   var totalMonth = filtered.reduce(function (s, e2) {
     return s + (e2.clp || toCLP2(e2.amount, e2.cur));
   }, 0);
+  var totalCardBg = modo === 'ingreso' ? '#064E3B' : C.pri;
   var byCat = {};
   filtered.forEach(function (e2) {
     byCat[e2.cat || "Otros"] = (byCat[e2.cat || "Otros"] || 0) + (e2.clp || toCLP2(e2.amount, e2.cur));
   });
   var catColors = ["#3B82F6", "#EF4444", "#F59E0B", "#10B981", "#8B5CF6", "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16"];
-  var budgetKey = "budget:" + (userEmail || "x") + ":" + gTipo;
+  var budgetKey = "budget:" + (userEmail || "x") + ":" + gTipo + ":" + modo;
   var [budget, setBudget] = useState(0);
   var [showBudget, setShowBudget] = useState(false);
   var saveBudget = function (v) {
@@ -7382,6 +7386,22 @@ function Gastos({
   }, 0);
   var displayTotal = view === "year" ? totalYear : totalMonth;
   var displayCount = baseExps.length;
+  var oKey2 = (modo === "gasto" ? "inc:" : "exp:") + (userEmail || "x");
+  var oAll = sto.get(oKey2) || [];
+  var oMon = oAll.filter(function (e2) {
+    return (e2.tipo || "personal") === gTipo && (e2.date || "").slice(0, 7) === month;
+  }).reduce(function (s, e2) {
+    return s + (e2.clp || 0);
+  }, 0);
+  var oYr = oAll.filter(function (e2) {
+    return (e2.tipo || "personal") === gTipo && (e2.date || "").slice(0, 4) === year;
+  }).reduce(function (s, e2) {
+    return s + (e2.clp || 0);
+  }, 0);
+  var iMon = modo === "gasto" ? oMon : totalMonth;
+  var gMon = modo === "gasto" ? totalMonth : oMon;
+  var iYr = modo === "gasto" ? oYr : totalYear;
+  var gYr = modo === "gasto" ? totalYear : oYr;
   var displayByCat = {};
   baseExps.forEach(function (e2) {
     displayByCat[e2.cat || "Otros"] = (displayByCat[e2.cat || "Otros"] || 0) + (e2.clp || toCLP2(e2.amount, e2.cur));
@@ -7417,7 +7437,7 @@ function Gastos({
       fontSize: 22,
       fontWeight: 700
     }
-  }, "💳 Gastos"), /*#__PURE__*/React.createElement("div", {
+  }, modo === "ingreso" ? "💰 Ingresos" : "💸 Gastos"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6
@@ -7451,8 +7471,47 @@ function Gastos({
   }, "+"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
+      gap: 4,
+      marginTop: 8,
+      background: C.inp,
+      borderRadius: 10,
+      padding: 3
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setModo("gasto");
+    },
+    style: {
+      flex: 1,
+      padding: "7px",
+      border: "none",
+      borderRadius: 7,
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: modo === "gasto" ? "#EF4444" : "transparent",
+      color: modo === "gasto" ? "#fff" : C.t3
+    }
+  }, "💸 Gastos"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setModo("ingreso");
+    },
+    style: {
+      flex: 1,
+      padding: "7px",
+      border: "none",
+      borderRadius: 7,
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: "pointer",
+      background: modo === "ingreso" ? C.acc : "transparent",
+      color: modo === "ingreso" ? "#fff" : C.t3
+    }
+  }, "💰 Ingresos")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
       gap: 6,
-      marginTop: 8
+      marginTop: 6
     }
   }, ["personal", "familiar"].map(function (tp) {
     return /*#__PURE__*/React.createElement("button", {
@@ -7630,7 +7689,64 @@ function Gastos({
       marginTop: 4,
       textAlign: "right"
     }
-  }, pctBudget.toFixed(0), "% usado")), view === "month" && /*#__PURE__*/React.createElement("button", {
+  }, pctBudget.toFixed(0), "% usado")), (iMon > 0 || gMon > 0) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.card,
+      padding: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      marginBottom: 8
+    }
+  }, "📊 Balance ", view === "year" ? "Anual" : "Mensual"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 13,
+      padding: "4px 0"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.t2
+    }
+  }, "Ingresos"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 600,
+      color: C.acc
+    }
+  }, fmt(view === "year" ? iYr : iMon))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 13,
+      padding: "4px 0"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.t2
+    }
+  }, "Gastos"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 600,
+      color: C.dan
+    }
+  }, fmt(view === "year" ? gYr : gMon))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 15,
+      fontWeight: 700,
+      padding: "6px 0",
+      borderTop: "2px solid " + C.brd,
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Diferencia"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: (view === "year" ? iYr - gYr : iMon - gMon) >= 0 ? C.acc : C.dan
+    }
+  }, fmt(view === "year" ? iYr - gYr : iMon - gMon)))), view === "month" && /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       setShowBudget(true);
     },
@@ -7971,7 +8087,7 @@ function Gastos({
       fontWeight: 700,
       marginBottom: 4
     }
-  }, "🎯 Presupuesto Mensual"), /*#__PURE__*/React.createElement("div", {
+  }, modo === "ingreso" ? "💰 Meta Ingreso" : "🎯 Presupuesto"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.t2,
@@ -8018,7 +8134,7 @@ function Gastos({
       fontSize: 18,
       fontWeight: 700
     }
-  }, "+ Nuevo Gasto"), /*#__PURE__*/React.createElement("button", {
+  }, modo === "ingreso" ? "+ Nuevo Ingreso" : "+ Nuevo Gasto"), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       setShowAdd(false);
     },
@@ -10599,7 +10715,7 @@ function App() {
       padding: `8px 0 calc(16px + var(--sb))`,
       zIndex: 100
     }
-  }, [["home", "home", "Inicio"], ["portfolio", "briefcase", "Portafolio"], ["expenses", "doc", "Gastos"], ["realestate", "home", "Inmob."], ["market", "chart", "Mercado"], ["plan", "doc", "Planif."], ["analysis", "chart", "Análisis"], ["profile", "user", "Perfil"]].map(([k, ic, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["home", "home", "Inicio"], ["portfolio", "briefcase", "Portafolio"], ["expenses", "doc", "Ing/Gas"], ["realestate", "home", "Inmob."], ["market", "chart", "Mercado"], ["plan", "doc", "Planif."], ["analysis", "chart", "Análisis"], ["profile", "user", "Perfil"]].map(([k, ic, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     onClick: () => setTab(k),
     style: {

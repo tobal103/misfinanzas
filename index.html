@@ -259,11 +259,31 @@ function NumInput({
 }) {
   var [editing, setEditing] = useState(false);
   var [raw, setRaw] = useState("");
+  var grp = function (s) {
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+  var fmtLive = function (txt) {
+    var s = String(txt == null ? "" : txt).replace(/[^\d,\.]/g, "");
+    var neg = false;
+    s = s.replace(/\./g, ",");
+    var parts = s.split(",");
+    var ip = (parts[0] || "").replace(/^0+(?=\d)/, "");
+    var hasSep = parts.length > 1;
+    var dp = hasSep ? parts.slice(1).join("").slice(0, decimals ? decimals : 2) : "";
+    var shown = grp(ip);
+    if (hasSep) shown = shown + "," + dp;
+    var clean = ip + (dp ? "." + dp : "");
+    return {
+      shown: shown,
+      clean: clean
+    };
+  };
   var num = parseFloat(value) || 0;
-  var display = editing ? raw : value ? decimals ? num.toLocaleString("es-CL", {
+  var settled = value !== "" && value != null ? decimals ? num.toLocaleString("es-CL", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   }) : Math.round(num).toLocaleString("es-CL") : "";
+  var display = editing ? raw : settled;
   return React.createElement("input", {
     style: Object.assign({}, S.input, st || {}),
     type: "text",
@@ -272,18 +292,16 @@ function NumInput({
     value: display,
     onFocus: function () {
       setEditing(true);
-      setRaw(value ? String(value) : "");
+      setRaw(value !== "" && value != null ? fmtLive(String(value).replace(".", ",")).shown : "");
     },
     onBlur: function () {
       setEditing(false);
-      var clean = raw.replace(/[^\d,\.]/g, "").replace(",", ".");
-      onChange(clean);
+      onChange(fmtLive(raw).clean);
     },
     onChange: function (e) {
-      var v = e.target.value;
-      setRaw(v);
-      var clean = v.replace(/[^\d,\.]/g, "").replace(",", ".");
-      onChange(clean);
+      var r = fmtLive(e.target.value);
+      setRaw(r.shown);
+      onChange(r.clean);
     }
   });
 }
@@ -7056,6 +7074,15 @@ function Gastos({
     m = (m % 12 + 12) % 12;
     return y + "-" + String(m + 1).padStart(2, "0");
   };
+  var fShort = function (n) {
+    n = n || 0;
+    if (n === 0) return "";
+    var a = Math.abs(n);
+    if (a >= 1e9) return (n / 1e9).toFixed(1).replace(".", ",") + " MMM";
+    if (a >= 1e6) return (n / 1e6).toFixed(1).replace(".", ",") + " MM";
+    if (a >= 1e3) return Math.round(n / 1e3) + " M";
+    return String(Math.round(n));
+  };
   var monthLabel = function (mk) {
     return mkDate(mk + "-01").toLocaleDateString("es-CL", {
       month: "long",
@@ -7615,12 +7642,41 @@ function Gastos({
     }
   }, "▶")), view === "year" && /*#__PURE__*/React.createElement("div", {
     style: {
-      textAlign: "center",
+      display: "flex",
+      gap: 8,
       marginTop: 8,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setMonth(parseInt(year) - 1 + month.slice(4));
+    },
+    style: {
+      background: "none",
+      border: "none",
+      fontSize: 18,
+      cursor: "pointer",
+      color: C.t1
+    }
+  }, "◀"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      textAlign: "center",
       fontSize: 15,
       fontWeight: 600
     }
-  }, year)), /*#__PURE__*/React.createElement("div", {
+  }, year), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setMonth(parseInt(year) + 1 + month.slice(4));
+    },
+    style: {
+      background: "none",
+      border: "none",
+      fontSize: 18,
+      cursor: "pointer",
+      color: C.t1
+    }
+  }, "▶"))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "8px 20px 0"
     }
@@ -7779,7 +7835,7 @@ function Gastos({
       fontSize: 13,
       fontWeight: 600
     }
-  }, "Gasto mensual"), /*#__PURE__*/React.createElement("div", {
+  }, modo === "ingreso" ? "Ingreso mensual" : "Gasto mensual"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.t3
@@ -7788,27 +7844,37 @@ function Gastos({
     style: {
       display: "flex",
       alignItems: "flex-end",
-      height: 80,
+      height: 88,
       gap: 3
     }
   }, months12.map(function (md) {
     var mx = Math.max.apply(null, months12.map(function (x) {
       return x.t;
     })) || 1;
+    var barCol = md.m === month ? modo === "ingreso" ? C.acc : C.dan : C.brd;
     return /*#__PURE__*/React.createElement("div", {
       key: md.m,
       style: {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        alignItems: "center"
+        alignItems: "center",
+        justifyContent: "flex-end"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        fontSize: 7,
+        color: C.t2,
+        fontWeight: 600,
+        marginBottom: 1,
+        whiteSpace: "nowrap"
+      }
+    }, fShort(md.t)), /*#__PURE__*/React.createElement("div", {
+      style: {
         width: "100%",
-        background: md.m === month ? C.acc : C.brd,
+        background: barCol,
         borderRadius: 3,
-        height: Math.max(4, md.t / mx * 60) + "px",
+        height: Math.max(3, md.t / mx * 48) + "px",
         marginBottom: 2,
         cursor: "pointer"
       },

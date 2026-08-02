@@ -8939,6 +8939,14 @@ function App() {
         var rt = sto.get("rt:" + s.email);
         if (rt) setRiskTarget(rt);
         var rawInv = sto.get(`inv:${s.email}`) || [];
+        var oExp = sto.get("exp:" + s.email);
+        if (oExp && oExp.length) {
+          sto.set("exp:" + s.email, oExp);
+        }
+        var oCat = sto.get("expCat:" + s.email);
+        if (oCat && !sto.get("expCat:" + s.email + ":gasto")) {
+          sto.set("expCat:" + s.email + ":gasto", oCat);
+        }
         if (rawInv.length) {
           var fixed = rawInv.map(function (i2) {
             return Object.assign({
@@ -8987,6 +8995,14 @@ function App() {
       email: u.email
     });
     var rawI = sto.get(`inv:${u.email}`) || [];
+    var oldExp = sto.get("exp:" + u.email);
+    if (oldExp && oldExp.length) {
+      sto.set("exp:" + u.email, oldExp);
+    }
+    var oldCat = sto.get("expCat:" + u.email);
+    if (oldCat && !sto.get("expCat:" + u.email + ":gasto")) {
+      sto.set("expCat:" + u.email + ":gasto", oldCat);
+    }
     setInv(rawI.map(function (i2) {
       return Object.assign({
         risk: "medio",
